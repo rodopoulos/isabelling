@@ -62,9 +62,9 @@ theorem "count xs n \<le> length xs"
 (* fun snoc: appends an element to the end of a list*)
 fun snoc:: "'a list \<Rightarrow> 'a \<Rightarrow> 'a list" where
   "snoc [] x = x # []" |
-  "snoc xs x = rev (x # xs)" 
+  "snoc (x # xs) y = x # (snoc xs y)" 
 
-value "snoc [1,2,3] 4" (*it works!*)
+value "snoc [a,b,c] d" (*it works!*)
 
 (* 
   We have to prove that length after snoc function is correct,
