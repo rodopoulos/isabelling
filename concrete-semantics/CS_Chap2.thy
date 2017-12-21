@@ -1,4 +1,4 @@
-theory ProgProve1
+theory CS_Chap2
 
   imports Main
     
@@ -67,8 +67,8 @@ fun snoc:: "'a list \<Rightarrow> 'a \<Rightarrow> 'a list" where
 value "snoc [1,2,3] 4" (*it works!*)
 
 (* 
-  We have to prove that length after snoc fun is correct,
-  so in reverse function, length is preserved
+  We have to prove that length after snoc function is correct,
+  so, in reverse function, length is preserved
 *)
 lemma snoc_length_correctness [simp]: "length(snoc xs x) = Suc(length xs)"
   apply (induction xs)
