@@ -80,13 +80,13 @@ fun reverse:: "'a list \<Rightarrow> 'a list" where
   "reverse [] = []" |
   "reverse (x # xs) = snoc (reverse xs) x"
   
-value "reverse [1, 2, 3]"
+value "reverse [a, b, c]" (* It works! *)
 
-lemma "reverse(snoc (reverse []) x) = x # []"
+lemma reverse_preserve [simp]: "reverse (snoc xs x) = x # (reverse xs)"
   apply (induction xs)
   apply auto
   done
-      
+    
 theorem "reverse (reverse xs) = xs"
   apply (induction xs)
    apply auto
