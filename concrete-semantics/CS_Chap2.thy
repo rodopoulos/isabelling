@@ -26,12 +26,12 @@ lemma add_2 [simp]: "add m (Suc n) = Suc(add m n)"
    apply (auto)
   done
     
-theorem add_comm: "add m n = add n m"
+theorem add_commutative: "add m n = add n m"
   apply (induction m)
   apply auto
   done
         
-theorem add_assoc: "add a (add b c) = add (add a b) c"
+theorem add_associative: "add a (add b c) = add (add a b) c"
   apply (induction a)
    apply (auto)
   done
@@ -150,6 +150,22 @@ fun mirror :: "'a tree2 \<Rightarrow> 'a tree2" where
   "mirror (Node l x r) = Node (mirror r) x (mirror l)"
 
 lemma mirror_correctness [simp]: "mirror(mirror t) = t"
+  apply (induction t)
+   apply auto
+  done
+
+fun pre_order :: "'a tree2 \<Rightarrow> 'a list" where
+  "pre_order (Leaf x) = [x]" |
+  "pre_order (Node l x r) = x # pre_order l @ pre_order r"
+
+fun post_order :: "'a tree2 \<Rightarrow> 'a list" where
+  "post_order (Leaf x) = [x]" |
+  "post_order (Node l x r) = post_order l @ post_order r @ [x]"
+
+value "pre_order (tree2 1 2 3)"
+value "post_order (tree2 1 2 3)"
+
+theorem "pre_order(mirror t) = rev (post_order t)"
   apply (induction t)
    apply auto
   done
