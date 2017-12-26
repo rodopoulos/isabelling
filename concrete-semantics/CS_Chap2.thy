@@ -7,11 +7,10 @@ begin
 (* EXERCISE 2.1 *)
 value "1 + (2::nat)"
 value "1 + (2::int)"
-value "1 + 2"
 value "1 - (2::nat)"
 value "1 - (2::int)"
-value "1 - 2"
-  
+
+
 (* EXERCISE 2.2 *)
 fun add :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
   "add 0 n = n" |
@@ -57,7 +56,8 @@ theorem "count xs n \<le> length xs"
   apply (induction xs)
   apply auto
   done
-    
+
+
 (* EXERCISE 2.4 *)
 (* fun snoc: appends an element to the end of a list*)
 fun snoc:: "'a list \<Rightarrow> 'a \<Rightarrow> 'a list" where
@@ -110,35 +110,52 @@ theorem "sum_upto n = n * (n + 1) div 2"
   apply auto
   done
 
+
 (* EXERCISE 2.6 *)
 datatype 'a tree = 
-  Tip | 
-  Node "'a tree" 'a "'a tree"
+  Tip 
+  | Node "'a tree" 'a "'a tree"
 
-fun contents:: "'a tree \<Rightarrow> 'a list" where
+fun contents :: "'a tree \<Rightarrow> 'a list" where
   "contents Tip = []" |
-  "contents (Node l x r) = (contents l) @ [x] @ (contents r)"
+  "contents (Node l x r) = contents l @ [x] @ contents r"
 
 value "contents (tree 2)"
 value "snoc (contents (tree 2 3 4)) 2" (* it works! *)
 
-fun sum_tree:: "nat tree \<Rightarrow> nat" where
-  "sum_tree Tip = 0" |
-  "sum_tree (Node l x r) = (sum_tree l) + x + (sum_tree r)"
+fun sumtree :: "nat tree \<Rightarrow> nat" where
+  "sumtree Tip = 0" |
+  "sumtree (Node l x r) = sumtree l + x + sumtree r"
 
-fun sum_list:: "nat list \<Rightarrow> nat" where
-  "sum_list [] = 0" |
-  "sum_list (x # xs) = x + sum_list xs"
+fun sumlist :: "nat list \<Rightarrow> nat" where
+  "sumlist [] = 0" |
+  "sumlist (x # xs) = x + sumlist xs"
 
-value "sum_tree (tree 1 2 3)"
-value "sum_list [1, 2, 3]"
+value "sumtree (tree 1 2 3)"
+value "sumlist [1, 2, 3]" (* It works! *)
 
-lemma "sum_tree t = sum_list(contents t)"
+theorem "sumtree t = sum_list(contents t)"
   apply (induction t)
    apply auto
   done
 
-  
+
+(* EXERCISE 2.7 *)  
+datatype 'a tree2 = 
+  Leaf 'a
+  | Node "'a tree2" 'a "'a tree2"
+
+fun mirror :: "'a tree2 \<Rightarrow> 'a tree2" where
+  "mirror (Leaf x) = Leaf x" | 
+  "mirror (Node l x r) = Node (mirror r) x (mirror l)"
+
+lemma mirror_correctness [simp]: "mirror(mirror t) = t"
+  apply (induction t)
+   apply auto
+  done
+
+
+(* EXERCISE 2.8 *)
 
 
 end
