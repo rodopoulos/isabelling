@@ -82,16 +82,64 @@ fun reverse:: "'a list \<Rightarrow> 'a list" where
   
 value "reverse [a, b, c]" (* It works! *)
 
+(* 
+  Now we need this lemma due to show that reverse function preserve
+  the order even with a snoc applied
+*)
 lemma reverse_preserve [simp]: "reverse (snoc xs x) = x # (reverse xs)"
   apply (induction xs)
   apply auto
   done
-    
+
+(* The theorem follows easily *)    
 theorem "reverse (reverse xs) = xs"
   apply (induction xs)
    apply auto
   done
     
+(* EXERCISE 2.5 *)
+fun sum_upto:: "nat \<Rightarrow> nat" where
+  "sum_upto 0 = 0" |
+  "sum_upto n = n + sum_upto(n - 1)"
+    
+value "sum_upto 2"
+value "sum_upto 5" (* It works! *)
   
+theorem "sum_upto n = n * (n + 1) div 2"
+  apply (induction n)
+  apply auto
+  done
+
+(* EXERCISE 2.6 *)
+datatype 'a tree = 
+  Tip | 
+  Node "'a tree" 'a "'a tree"
+
+fun contents:: "'a tree \<Rightarrow> 'a list" where
+  "contents Tip = []" |
+  "contents (Node l x r) = (contents l) @ [x] @ (contents r)"
+
+value "contents (tree 2)"
+value "snoc (contents (tree 2 3 4)) 2" (* it works! *)
+
+fun sum_tree:: "nat tree \<Rightarrow> nat" where
+  "sum_tree Tip = 0" |
+  "sum_tree (Node l x r) = (sum_tree l) + x + (sum_tree r)"
+
+fun sum_list:: "nat list \<Rightarrow> nat" where
+  "sum_list [] = 0" |
+  "sum_list (x # xs) = x + sum_list xs"
+
+value "sum_tree (tree 1 2 3)"
+value "sum_list [1, 2, 3]"
+
+lemma "sum_tree t = sum_list(contents t)"
+  apply (induction t)
+   apply auto
+  done
+
+  
+
+
 end
 
