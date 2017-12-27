@@ -173,6 +173,14 @@ theorem "pre_order(mirror t) = rev (post_order t)"
 
 (* EXERCISE 2.8 *)
 
+fun intersperse :: "'a \<Rightarrow> 'a list \<Rightarrow> 'a list" where
+  "intersperse a [] = []" |
+  "intersperse a (x # xs) = x # (a # intersperse a xs)"
+
+theorem "map f (intersperse a xs) = intersperse (f a) (map f xs)"
+  apply (induction xs)
+  apply auto
+  done 
 
 end
 
