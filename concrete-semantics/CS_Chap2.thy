@@ -182,5 +182,15 @@ theorem "map f (intersperse a xs) = intersperse (f a) (map f xs)"
   apply auto
   done 
 
+
+(* EXERCISE 2.9 *)
+
+fun itadd :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+  "itadd 0 m = m" |
+  "itadd (Suc m) n = itadd m (Suc n)"
+
+value "itadd 1 2"
+value "itadd 1 (itadd 1 1)" (* It works! *)
+
 end
 
