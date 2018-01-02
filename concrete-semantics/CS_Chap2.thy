@@ -140,7 +140,9 @@ theorem "sumtree t = sum_list(contents t)"
   done
 
 
-(* EXERCISE 2.7 *)  
+(* EXERCISE 2.7 *)
+
+(* The first rule tells to store values in leaves as well*)
 datatype 'a tree2 = 
   Leaf 'a
   | Node "'a tree2" 'a "'a tree2"
@@ -184,13 +186,31 @@ theorem "map f (intersperse a xs) = intersperse (f a) (map f xs)"
 
 
 (* EXERCISE 2.9 *)
-
+(* 
+  This function is tail-recursive: the induction step
+  begins with the function itself.
+*)
 fun itadd :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
   "itadd 0 m = m" |
   "itadd (Suc m) n = itadd m (Suc n)"
 
 value "itadd 1 2"
 value "itadd 1 (itadd 1 1)" (* It works! *)
+
+(* Arbitrary on n makes induction possible *)
+theorem "itadd m n = add m n"
+  apply (induction m arbitrary: n)
+   apply auto
+  done
+
+
+(* EXERCISE 2.10 *)
+
+datatype 'a tree0 = 
+  Tip
+  | Node "'a tree0" "'a tree0"
+
+
 
 end
 
