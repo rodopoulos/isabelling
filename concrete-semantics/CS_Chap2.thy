@@ -206,11 +206,44 @@ theorem "itadd m n = add m n"
 
 (* EXERCISE 2.10 *)
 
-datatype 'a tree0 = 
-  Tip
-  | Node "'a tree0" "'a tree0"
+datatype tree0 = Tip | Node tree0 tree0
 
+fun nodes :: "tree0 \<Rightarrow> nat" where
+  "nodes Tip = 1" |
+  "nodes (Node l r) = 1 + nodes l + nodes r"
 
+value "nodes (tree0 Node 1 2)" (* It works *)
+
+fun explode :: "nat \<Rightarrow> tree0 \<Rightarrow> tree0" where
+  "explode 0 t = t" |
+  "explode (Suc n) t = explode n (Node t t)"
+
+(* 
+  A n-factor explode is equivalent to expanding your current tree in n levels.
+  Hence, you are adding 2^i nodes for each i-th level. This is basic induction
+  over tree height, resulting in 2^n - 1
+*)
+value "explode 0 (tree0 Tip)" (* = 1 *)
+value "explode 1 (tree0 Tip)" (* = 3 *)
+value "explode 2 (tree0 Tip)" (* = 7 *)
+value "explode 3 (tree0 Tip)" (* = 15 *)
+
+(*
+  However, when your initial tree already has T nodes, where T = nodes t,
+  you need to count and explode then as well. Therefore, we need to add
+  the explosion on each subtree: 2^n * T.
+*)
+value "explode 0 (tree0 Node l r)" (* = 3 *)
+value "explode 1 (tree0 Node l r)" (* = 7 *)
+value "explode 2 (tree0 Node l r)" (* = 15 *)
+value "explode 3 (tree0 Node l r)" (* = 31 *)
+
+(* Adding the two parts, we have: N = 2^n * T + 2^n - 1 *)
+theorem "nodes (explode n t) = 2^n * nodes t + 2^n - 1"
+  apply (induction n arbitrary: t)
+   apply (auto simp add:algebra_simps)
+  done
+  
 
 end
 
