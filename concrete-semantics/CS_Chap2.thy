@@ -243,7 +243,78 @@ theorem "nodes (explode n t) = 2^n * nodes t + 2^n - 1"
   apply (induction n arbitrary: t)
    apply (auto simp add:algebra_simps)
   done
+
+
+(* EXERCISE 2.11 *)
+datatype exp = Var
+  | Const int
+  | Add exp exp
+  | Mult exp exp
+
+(* 
+  Note that this simply evaluates an expression and, 
+  if it has and variable, replaces it by the second argument 
+*)
+fun eval :: "exp \<Rightarrow> int \<Rightarrow> int" where
+  "eval Var n = n" |
+  "eval (Const k) n = k" |
+  "eval (Add a b) n = eval a n + eval b n" |
+  "eval (Mult a b) n = eval a n * eval b n"
+
+value "eval (Add (Const 2) (Const 4)) 1"
+value "eval (Add (Var) (Const 4)) 1" 
+value "eval (Add (Mult (Const 1) (Const 2)) Var) 2" (* It works! *)
+
+(*
+  In evalp, for each element on the list, we sum it with the product of n
+  and the evalp with the rest of the list.
+  The last iteration will always add 0.
+
+  At the end, the expression will be composed by several products. If you
+  transform them in operands, you will have the expected polynomial   
+*)
+fun evalp :: "int list \<Rightarrow> int \<Rightarrow> int" where
+  "evalp [] n = 0" |
+  "evalp (x # xs) n = x + n * evalp xs n" 
+
+value "evalp [1, 2, 4] 1" (* It works! *)
+
+(*
+  Coeffs function translates an expression into our polynomial-list form.
+  This means we convert each term of the expression in a list item. Hence,
+  an expression like Add (Mult (Const 1) (Const 2) Var) will
+  be converted in []. For every possible expression element: 
   
+  - For a constant k, we just add it to the list
+  - For a variable, we
+  - For an addition, we must sum all terms of the operands 
+    resulting in a one Const element list
+  - For a product, we apply the same logic of addtion, but using multiplication
+*)
+
+fun sumexp :: "int list \<Rightarrow> int list \<Rightarrow> int list" where
+  "sumexp [] xs = xs" |
+  "sumexp xs [] = xs" |
+  "sumexp (x # xs) (y # ys) = (x + y) # sumexp xs ys"
+
+fun scalar_mult :: "int \<Rightarrow> int list \<Rightarrow> int list" where
+  "scalar_mult n [] = []" |
+  "scalar_mult n (x # xs) = n*x # scalar_mult n xs"
+
+fun multexp :: "int list \<Rightarrow> int list \<Rightarrow> int list" where
+  "multexp [] xs = []" |
+  "multexp (x # xs) ys = sumexp (scalar_mult x ys) (0 # multexp xs ys)"
+
+fun coeffs :: "exp \<Rightarrow> int list" where
+  "coeffs Var = [0, 1]" |
+  "coeffs (Const k) = [k]" |
+  "coeffs (Add a b) = sumexp (coeffs a) (coeffs b)" |
+  "coeffs (Mult a b) = multexp (coeffs a) (coeffs b)"
+
+value "coeffs (Add (Const 2) (Var))"
+value "coeffs (Mult Var Var)"
+value "evalp (coeffs (Mult Var Var)) 2" (* It works *)
+
 
 end
 
