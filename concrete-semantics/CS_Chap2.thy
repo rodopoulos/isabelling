@@ -280,7 +280,7 @@ fun evalp :: "int list \<Rightarrow> int \<Rightarrow> int" where
 value "evalp [1, 2, 4] 1" (* It works! *)
 
 (*
-  Coeffs function translates an expression into our polynomial-list form.
+  coeffs function translates an expression into our polynomial-list form.
   This means we convert each term of the expression in a list item. Hence,
   an expression like Add (Mult (Const 1) (Const 2) Var) will
   be converted in []. For every possible expression element: 
@@ -289,7 +289,7 @@ value "evalp [1, 2, 4] 1" (* It works! *)
   - For a variable, we
   - For an addition, we must sum all terms of the operands 
     resulting in a one Const element list
-  - For a product, we apply the same logic of addtion, but using multiplication
+  - For a product, we apply the same logic of addition, but using multiplication
 *)
 
 fun sumexp :: "int list \<Rightarrow> int list \<Rightarrow> int list" where
@@ -313,8 +313,27 @@ fun coeffs :: "exp \<Rightarrow> int list" where
 
 value "coeffs (Add (Const 2) (Var))"
 value "coeffs (Mult Var Var)"
-value "evalp (coeffs (Mult Var Var)) 2" (* It works *)
+value "evalp (coeffs (Mult Var Var)) 2" (* It works! *)
 
+lemma evalp_preserve_sum [simp]: "evalp (sumexp xs ys) n = evalp xs n + evalp ys n"
+  apply (induction rule:sumexp.induct)
+  apply (auto simp add:Int.int_distrib)
+  done
+
+lemma evalp_preserve_scalar_mult [simp]: "evalp (scalar_mult n xs) x = n * evalp xs x"
+  apply (induction xs)
+  apply (auto simp add:Int.int_distrib)
+  done
+
+lemma evalp_preserve_mult [simp]: "evalp (multexp xs ys) n = evalp xs n * evalp ys n"
+  apply (induction xs)
+  apply (auto simp add:Int.int_distrib)
+  done
+
+theorem evalp_coeffs: "evalp (coeffs e) x = eval e x"
+  apply (induction e)
+  apply (auto)
+  done
 
 end
 
