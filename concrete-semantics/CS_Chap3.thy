@@ -48,9 +48,17 @@ lemma "aval (asimp a) s = aval a s"
   apply (auto)
   done
 
-
 (* EXERCISE 3.1 *)
- 
+fun optimal :: "aexp \<Rightarrow> bool" where
+  "optimal (N n) = True" |
+  "optimal (V x) = True" |
+  "optimal (Plus (N i) (N j)) = False" |
+  "optimal (Plus a1 a2) = ((optimal a1) \<and> (optimal a2))"
+
+theorem "optimal (asimp_const a)"
+  apply (induction a)
+  apply (auto split: aexp.split)
+  done
 
 
 (* EXERCISE 3. *)
