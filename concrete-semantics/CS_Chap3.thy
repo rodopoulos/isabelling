@@ -9,11 +9,19 @@ datatype aexp = N int | V vname | Plus aexp aexp
 type_synonym val = int
 type_synonym state = "vname \<Rightarrow> val"
 
+(* 
+  Given an expression and a state (variable value) it evaluates the primer
+  giving the expression final value
+*)
 fun aval :: "aexp \<Rightarrow> state \<Rightarrow> val" where
   "aval (N n) s = n" |
   "aval (V x) s = s x" |
   "aval (Plus a1 a2) s = aval a1 s + aval a2 s"
 
+(*
+  Performs constant folding, i.e., reduces the expression, resolving
+  trivial Plus operations
+*)
 fun asimp_const :: "aexp \<Rightarrow> aexp" where
   "asimp_const (N n) = N n" |
   "asimp_const (V x) = V x" |
@@ -27,6 +35,10 @@ lemma "aval (asimp_const a) s = aval a s"
   apply (auto split: aexp.split)
   done
 
+(*
+  Plus operation optimization, intended to eliminate 0 and
+  simplify trivial summations
+*)
 fun plus :: "aexp \<Rightarrow> aexp \<Rightarrow> aexp" where
   "plus (N i1) (N i2) = N (i1 + i2)" |
   "plus a (N i) = (if i=0 then a else Plus a (N i))" |
@@ -38,6 +50,7 @@ lemma aval_plus [simp] : "aval (plus a1 a2) s = aval a1 s + aval a2 s"
   apply (auto)
   done
 
+(* Function for simplify expressions using the plus function *)
 fun asimp :: "aexp \<Rightarrow> aexp" where
   "asimp (N n) = N n" |
   "asimp (V x) = V x" |
@@ -62,6 +75,7 @@ theorem "optimal (asimp_const a)"
 
 
 (* EXERCISE 3.2 *)
+(* Return the total summation of all constants in an expression *)
 fun sumN :: "aexp \<Rightarrow> int" where
   "sumN (N n) = n" |
   "sumN (V x) = 0" |
@@ -69,6 +83,7 @@ fun sumN :: "aexp \<Rightarrow> int" where
 
 value "sumN (Plus (N 1) (Plus (V x) (N 2)))" (* It works! *)
 
+(* Giving an expression, return it with all constants replaced by zero *)
 fun zeroN :: "aexp \<Rightarrow> aexp" where
   "zeroN (N n) = (N 0)" |
   "zeroN (V x) = (V x)" |
@@ -76,6 +91,7 @@ fun zeroN :: "aexp \<Rightarrow> aexp" where
 
 value "zeroN (Plus (N 1) (Plus (V x) (N 2)))" (* It works! *)
 
+(* Transform a given expression in an addition of the sumN and zeroN of that expression*)
 fun sepN :: "aexp \<Rightarrow> aexp" where
   "sepN a = Plus (N (sumN a)) (zeroN a)"
 
@@ -86,6 +102,11 @@ lemma aval_sepN [simp] : "aval (sepN a) s = aval a s"
   apply (auto)
   done
 
+(* 
+  Finally, for performing the full_asimp, we just simplify the expression as we can
+  and then apply the sepN function, transforming it in an addition of the variable
+  and resulting constant.
+ *)
 fun full_asimp :: "aexp \<Rightarrow> aexp" where
   "full_asimp a = asimp (sepN a)"
 
@@ -97,19 +118,20 @@ lemma aval_full_asimp: "aval (full_asimp a) s = aval a s"
   done
 
 
-(* EXERCISE 3. *)
+(* EXERCISE 3.3 *)
 
 
-(* EXERCISE 3. *)
+
+(* EXERCISE 3.4 *)
 
 
-(* EXERCISE 3. *)
+(* EXERCISE 3.5 *)
 
 
-(* EXERCISE 3. *)
+(* EXERCISE 3.6 *)
 
 
-(* EXERCISE 3. *)
+(* EXERCISE 3.7 *)
 
 
 end
