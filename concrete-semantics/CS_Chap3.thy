@@ -61,7 +61,40 @@ theorem "optimal (asimp_const a)"
   done
 
 
-(* EXERCISE 3. *)
+(* EXERCISE 3.2 *)
+fun sumN :: "aexp \<Rightarrow> int" where
+  "sumN (N n) = n" |
+  "sumN (V x) = 0" |
+  "sumN (Plus a1 a2) = sumN a1 + sumN a2"
+
+value "sumN (Plus (N 1) (Plus (V x) (N 2)))" (* It works! *)
+
+fun zeroN :: "aexp \<Rightarrow> aexp" where
+  "zeroN (N n) = (N 0)" |
+  "zeroN (V x) = (V x)" |
+  "zeroN (Plus a1 a2) = Plus (zeroN a1) (zeroN a2)"
+
+value "zeroN (Plus (N 1) (Plus (V x) (N 2)))" (* It works! *)
+
+fun sepN :: "aexp \<Rightarrow> aexp" where
+  "sepN a = Plus (N (sumN a)) (zeroN a)"
+
+value "sepN (Plus (N 1) (Plus (V x) (N 2)))" (* It works! *)
+
+lemma aval_sepN [simp] : "aval (sepN a) s = aval a s"
+  apply (induction a)
+  apply (auto)
+  done
+
+fun full_asimp :: "aexp \<Rightarrow> aexp" where
+  "full_asimp a = asimp (sepN a)"
+
+value "full_asimp (Plus (N 1) (Plus (V x) (N 2)))" (* It works *)
+
+lemma aval_full_asimp: "aval (full_asimp a) s = aval a s"
+  apply (induction a)
+  apply (auto)
+  done
 
 
 (* EXERCISE 3. *)
