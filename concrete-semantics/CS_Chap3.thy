@@ -1,6 +1,7 @@
 theory CS_Chap3
 
-  imports Main
+imports "~~/src/HOL/IMP/BExp"
+        "~~/src/HOL/IMP/ASM"
 
 begin
 type_synonym vname = string
@@ -148,23 +149,26 @@ datatype aexpt = Nt int
   | Plust aexpt aexpt
   | Times aexpt aexpt
 
+(* We have now the Times case. Pretty trivial! *)
 fun avalt :: "aexpt \<Rightarrow> state \<Rightarrow> val" where
   "avalt (Nt n) s = n" |
   "avalt (Vt x) s = s x" |
   "avalt (Plust a1 a2) s = avalt a1 s + avalt a2 s" |
   "avalt (Times a1 a2) s = avalt a1 s * avalt a2 s "
 
+(* plust definition follows equal as our previous plus function *)
 fun plust :: "aexpt \<Rightarrow> aexpt \<Rightarrow> aexpt" where
   "plust (Nt n1) (Nt n2) = Nt (n1 + n2)" |
   "plust (Nt n) a = (if n = 0 then a else Plust (Nt n) a)" |
   "plust a (Nt n) = (if n = 0 then a else Plust a (Nt n))" |
   "plust a1 a2 = Plust a1 a2"
 
+(* In multiplication, we have 2 special cases: null factor (zero) and neutral factor (one) *)
 fun times :: "aexpt \<Rightarrow> aexpt \<Rightarrow> aexpt" where
   "times (Nt n1) (Nt n2) = Nt (n1 * n2)" |
   "times (Nt n) a = 
-    (if n = 1 then a else
-    if n = 0 then (Nt 0) else
+    (if n = 0 then (Nt 0) else
+    if n = 1 then a else
     Times (Nt n) a)" |
   "times a (Nt n) =  
     (if n = 0 then (Nt 0) else
@@ -172,22 +176,36 @@ fun times :: "aexpt \<Rightarrow> aexpt \<Rightarrow> aexpt" where
     Times a (Nt n))" |
   "times a1 a2 = Times a1 a2"
 
+(* Let's test times *)
+value "times (Nt 3) (Nt 4)" (* = 12 | Ok*)
+value "times (Nt 3) (Nt 0)" (* = 0 | Ok*)
+value "times (Nt 3) (Nt 1)" (* = 3 | Ok*)
+value "times (Nt 0) (Nt 4)" (* = 0 | Ok*)
+value "times (Nt 1) (Nt 4)" (* = 4 | Ok*)
+value "times (Add (Nt 3) (Nt 2)) (Nt 4)" (* = aexpt | Ok*)
+value "times (Nt 4) (Add (Nt 3) (Nt 2))" (* = aexpt | Ok*)
+value "times (Add (Nt 3) (Nt 2)) (Add (Nt 3) (Nt 2))" (* = aexpt | Ok*)
+
+(* Times case is added to our simplification function *)
 fun asimpt :: "aexpt \<Rightarrow> aexpt" where
   "asimpt (Nt n) = Nt n" |
   "asimpt (Vt v) = Vt v" |
   "asimpt (Plust a1 a2) = plust (asimpt a1) (asimpt a2)" |
   "asimpt (Times a1 a2) = times (asimpt a1) (asimpt a2)"
 
+(* Proving that plust function has distributive properties *)
 lemma avalt_plust [simp] : "avalt (plust a1 a2) s = avalt a1 s + avalt a2 s"
-  apply (induction rule: plust.induct)
+  apply (induction a1 a2 rule: plust.induct)
+  apply (simp_all)
+  done
+
+(* Proving that times function has distributive properties *)
+lemma avalt_times [simp] : "avalt (times a1 a2) s = avalt a1 s * avalt a2 s"
+  apply (induction a1 a2 rule: times.induct)
   apply (auto)
   done
 
-lemma avalt_times [simp] : "avalt (times a1 a2) s = avalt a1 s * avalt a2 a"
-  apply (induction rule: times.induct)
-  apply (auto)
-  done
-
+(* Finally, proving that our simplification function is correct *)
 theorem "avalt (asimpt a) s = avalt a s"
   apply (induction a)
   apply (auto)
@@ -215,6 +233,10 @@ fun aval2 :: "aexp2 \<Rightarrow> state \<Rightarrow> (val \<times> state)" wher
 
 
 (* EXERCISE 3.6 *)
+datatype lexp = Nl int
+  | Vl vname
+  | Plusl lexp lexp
+  | LET vname lexp lexp
 
 
 (* EXERCISE 3.7 *)
