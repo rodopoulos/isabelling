@@ -1,7 +1,6 @@
 theory CS_Chap3
 
-imports "~~/src/HOL/IMP/BExp"
-        "~~/src/HOL/IMP/ASM"
+imports Main
 
 begin
 type_synonym vname = string
@@ -238,8 +237,43 @@ datatype lexp = Nl int
   | Plusl lexp lexp
   | LET vname lexp lexp
 
+(* 
+  Now, for a proper avaliation, we need to implement the LET aval. 
+  Basically, this means that we need to replace the ocurrence of 
+  variable x in a2 by expression a1.
+*)
+fun lval :: "lexp \<Rightarrow> state \<Rightarrow> int" where
+  "lval (Nl n) s = n" |
+  "lval (Vl x) s = s x" |
+  "lval (Plusl a1 a2) s = lval a1 s + lval a2 s" |
+  "lval (LET x a1 a2) s = lval a2 (s(x := lval a1 s))"
 
-(* EXERCISE 3.7 *)
+value "lval (Vl x) (s 5)" 
+value "lval (LET v (Plusl (Nl 1) (Nl 2)) (Plusl (Nl 5) (Vl v))) s" (* It works *)
+
+(*
+  Here we want to transform an lexp expression into an aexp one.
+  Pretty straighforward for int and variables. Addition is done
+  recursively. For the LET constructor, we just use our subst function,
+  which already apply the variable value over an aexp expression, with
+  recursion over the expression parameters.
+  Piece of cake!
+*)
+fun inline :: "lexp \<Rightarrow> aexp" where
+  "inline (Nl n) = N n" | 
+  "inline (Vl x) = V x" | 
+  "inline (Plusl a1 a2) = Plus (inline a1) (inline a2)" | 
+  "inline (LET x a1 a2) = subst x (inline a1) (inline a2)" 
+
+(* 
+  Proving that inline function is correct is proving that we 
+  can correctly evaluate the resulting expression. 
+*)
+theorem inline_correctness : "lval l s = aval (inline l) s"
+  apply (induction l arbitrary: s)
+  apply auto
+  done
+
 
 
 end
