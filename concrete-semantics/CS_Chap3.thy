@@ -183,9 +183,9 @@ lemma avalt_plust [simp] : "avalt (plust a1 a2) s = avalt a1 s + avalt a2 s"
   apply (auto)
   done
 
-lemma avalt_times [simp]: "avalt (times a1 a2) s = avalt a1 s * avalt a2 a"
+lemma avalt_times [simp] : "avalt (times a1 a2) s = avalt a1 s * avalt a2 a"
   apply (induction rule: times.induct)
-  apply (simp_all)
+  apply (auto)
   done
 
 theorem "avalt (asimpt a) s = avalt a s"
@@ -195,6 +195,23 @@ theorem "avalt (asimpt a) s = avalt a s"
 
 
 (* EXERCISE 3.5 *)
+datatype aexp2 = N2 int 
+  | V2 vname 
+  | Plus2 aexp2 aexp2
+  | PostPlus vname
+  | Times2 aexp2 aexp2
+  | Div2 aexp2 aexp2
+
+fun aval2 :: "aexp2 \<Rightarrow> state \<Rightarrow> (val \<times> state)" where
+  "aval2 (N2 n) s = (n, s)" |
+  "aval2 (V2 x) s = (s x, s)" |
+  "aval2 (Plus2 a1 a2) s = (fst (aval2 a1 s) + fst (aval2 a2 s), 
+    (\<lambda> x. (snd (aval2 a1 s) x) + (snd (aval2 a2 s) x) - (s x)))" |
+  "aval2 (Times2 a1 a2) s = (fst (aval2 a1 s) * fst (aval2 a2 s), 
+    (\<lambda> x. (snd (aval2 a1 s) x) * (snd (aval2 a2 s) x) - (s x)))" |
+  "aval2 (Div2 a1 a2) s = (fst (aval2 a1 s) div fst (aval2 a2 s), 
+    (\<lambda> x. (snd (aval2 a1 s) x) div (snd (aval2 a2 s) x) - (s x)))" |
+  "aval2 (PostPlus x) s = (s x, s(x:= 1 + s x))"
 
 
 (* EXERCISE 3.6 *)
