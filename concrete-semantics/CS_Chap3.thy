@@ -138,6 +138,60 @@ theorem "aval a1 s = aval a2 s \<Longrightarrow> aval (subst x a1 e) s = aval (s
 
 
 (* EXERCISE 3.4 *)
+(*
+  Instead of important and extending the AExp theory, let's just create
+  our own types,  adding the letter t, of times, at the end
+  of our constructors. Seems more portable.
+*)
+datatype aexpt = Nt int 
+  | Vt vname 
+  | Plust aexpt aexpt
+  | Times aexpt aexpt
+
+fun avalt :: "aexpt \<Rightarrow> state \<Rightarrow> val" where
+  "avalt (Nt n) s = n" |
+  "avalt (Vt x) s = s x" |
+  "avalt (Plust a1 a2) s = avalt a1 s + avalt a2 s" |
+  "avalt (Times a1 a2) s = avalt a1 s * avalt a2 s "
+
+fun plust :: "aexpt \<Rightarrow> aexpt \<Rightarrow> aexpt" where
+  "plust (Nt n1) (Nt n2) = Nt (n1 + n2)" |
+  "plust (Nt n) a = (if n = 0 then a else Plust (Nt n) a)" |
+  "plust a (Nt n) = (if n = 0 then a else Plust a (Nt n))" |
+  "plust a1 a2 = Plust a1 a2"
+
+fun times :: "aexpt \<Rightarrow> aexpt \<Rightarrow> aexpt" where
+  "times (Nt n1) (Nt n2) = Nt (n1 * n2)" |
+  "times (Nt n) a = 
+    (if n = 1 then a else
+    if n = 0 then (Nt 0) else
+    Times (Nt n) a)" |
+  "times a (Nt n) =  
+    (if n = 0 then (Nt 0) else
+    if n = 1 then a else
+    Times a (Nt n))" |
+  "times a1 a2 = Times a1 a2"
+
+fun asimpt :: "aexpt \<Rightarrow> aexpt" where
+  "asimpt (Nt n) = Nt n" |
+  "asimpt (Vt v) = Vt v" |
+  "asimpt (Plust a1 a2) = plust (asimpt a1) (asimpt a2)" |
+  "asimpt (Times a1 a2) = times (asimpt a1) (asimpt a2)"
+
+lemma avalt_plust [simp] : "avalt (plust a1 a2) s = avalt a1 s + avalt a2 s"
+  apply (induction rule: plust.induct)
+  apply (auto)
+  done
+
+lemma avalt_times [simp]: "avalt (times a1 a2) s = avalt a1 s * avalt a2 a"
+  apply (induction rule: times.induct)
+  apply (simp_all)
+  done
+
+theorem "avalt (asimpt a) s = avalt a s"
+  apply (induction a)
+  apply (auto)
+  done
 
 
 (* EXERCISE 3.5 *)
