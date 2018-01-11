@@ -1,6 +1,7 @@
 theory CS_Chap3
 
 imports Main
+  "~~/src/HOL/IMP/BExp"
 
 begin
 type_synonym vname = string
@@ -276,63 +277,66 @@ theorem inline_correctness : "lval l s = aval (inline l) s"
 
 
 (* Exercise 3.7 *)
-(* We put the already done theory from the book *)
-datatype bexp = B bool
-  | Not bexp
-  | And bexp bexp
-  | Less aexp aexp
-  | Le aexp aexp
-  | Eq aexp aexp
+(* Extensions can be done with definitions *)
+definition Le :: "AExp.aexp \<Rightarrow> AExp.aexp \<Rightarrow> bexp" where
+  "Le a1 a2 = Not (Less a2 a1)"
 
-fun not :: "bexp \<Rightarrow> bexp" where
-  "not (B True) = B False" |
-  "not (B False) = B True" |
-  "not b = Not b"
+definition Eq :: "AExp.aexp \<Rightarrow> AExp.aexp \<Rightarrow> bexp" where
+  "Eq a1 a2 = And (Not (Less a1 a2)) (Not (Less a2 a1))"
 
-fun "and" :: "bexp \<Rightarrow> bexp \<Rightarrow> bexp" where
-  "and (B True) b = b" |
-  "and b (B True) = b" |
-  "and (B False) b = B False" |
-  "and b (B False) = B False" |
-  "and b1 b2 = And b1 b2 "
-
-fun less :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
-  "less (N n1) (N n2) = B(n1 < n2)" |
-  "less a1 a2 = Less a1 a2"
-
-(* Now we extend it. Straightforward. *)
-fun le :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
-  "le (N n1) (N n2) = B(n1 \<le> n2)" |
-  "le a1 a2 = Le a1 a2"
-
-fun eq :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
-  "eq (N n1) (N n2) = B(n1 = n2)" |
-  "eq a1 a2 = Eq a1 a2"
-
-fun bsimp :: "bexp \<Rightarrow> bexp" where
-  "bsimp (B v) = B v" |
-  "bsimp (Not b) = not (bsimp b)" |
-  "bsimp (And b1 b2) = and (bsimp b1) (bsimp b2)" |
-  "bsimp (Less a1 a2) = less (asimp a1) (asimp a2)" |
-  "bsimp (Le a1 a2) = le (asimp a1) (asimp a2)" |
-  "bsimp (Eq a1 a2) = eq (asimp a1) (asimp a2)"
-
-fun bval :: "bexp \<Rightarrow> state \<Rightarrow> bool" where
-  "bval (B v) s = v" |
-  "bval (Not b) s = (\<not> bval b s)" |
-  "bval (And b1 b2) s = (bval b1 s \<and> bval b2 s)" |
-  "bval (Less a1 a2) s = (aval a1 s < aval a2 s)" |
-  "bval (Le a1 a2) s = (aval a1 s \<le> aval a2 s)" |
-  "bval (Eq a1 a2) s = (aval a1 s = aval a2 s)"
-
-(* Correctness of both operations is purely induction over expressions *)
-theorem Le_correctness : "bval (Le a1 a2) s = (aval a1 s \<le> aval a2 s)"
-  apply (induction a1 a2 rule: le.induct)
-  apply (auto)
+(* Correctness of both operations is easy over definitions *)
+theorem Le_correctness : "bval (Le a1 a2) s = (AExp.aval a1 s \<le> AExp.aval a2 s)"
+  apply (auto simp add: Le_def)
   done
 
-theorem Eq_correctness : "bval (Eq a1 a2) s = (aval a1 s = aval a2 s)"
-  apply (induction a1 a2 rule: eq.induct)
+theorem Eq_correctness : "bval (Eq a1 a2) s = (AExp.aval a1 s = AExp.aval a2 s)"
+  apply (auto simp add: Eq_def)
+  done
+
+
+(* Exercise 3.8 *)
+datatype ifexp = Bi bool 
+  | If ifexp ifexp ifexp 
+  | Less2 AExp.aexp AExp.aexp
+
+(* 
+  The If statement should evaluate the first parameter and, based on that
+  give the evaluation of the second or the third.
+*)
+fun ifval :: "ifexp \<Rightarrow> state \<Rightarrow> bool" where
+  "ifval (Bi v) s = v" |
+  "ifval (If a b c) s = (if (ifval a s) then (ifval b s) else (ifval c s))" |
+  "ifval (Less2 a1 a2) s = (AExp.aval a1 s < AExp.aval a2 s)"
+
+fun b2ifexp :: "bexp \<Rightarrow> ifexp" where
+  "b2ifexp (Bc v) = Bi v" |
+  "b2ifexp (Not b) = If (b2ifexp b) (Bi False) (Bi True)" |
+  "b2ifexp (And b1 b2) = If (b2ifexp b1) (b2ifexp b2) (Bi False)" |
+  "b2ifexp (Less a1 a2) = Less2 a1 a2" 
+
+(* 
+  What does If a b c means? (a \<and> b) \<or> (\<not>a \<and> c), right?
+  But we need to get rid of that disjunction, since we don't have it.
+  So we negate two times! \<not>\<not>((a \<and> b) \<or> (\<not>a \<and> c)), leading to:
+  \<not>(\<not>(a \<and> b) \<and> \<not>(\<not>a \<and> c))
+  
+*)
+fun if2bexp :: "ifexp \<Rightarrow> bexp" where
+  "if2bexp (Bi v) = Bc v" |
+  "if2bexp (If a b c) = Not( And 
+    (Not ((And (if2bexp a) (if2bexp b)))) 
+    (Not ((And (Not (if2bexp a)) (if2bexp c))))
+  )" |
+  "if2bexp (Less2 a1 a2) = Less a1 a2"
+
+(* Proving correctness is proving that the resulting expression evaluates right *)
+theorem b2ifexp_correctness : "ifval (b2ifexp e) s = bval e s"
+  apply (induction e)
+  apply auto
+  done
+
+theorem if2bexp_correctness : "bval (if2bexp e) s = ifval e s"
+  apply (induction e)
   apply auto
   done
 
