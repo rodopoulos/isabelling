@@ -275,5 +275,63 @@ theorem inline_correctness : "lval l s = aval (inline l) s"
   done
 
 
+(* Exercise 3.7 *)
+datatype bexp = B bool
+  | Not bexp
+  | And bexp bexp
+  | Less aexp aexp
+  | Le aexp aexp
+  | Eq aexp aexp
+
+fun not :: "bexp \<Rightarrow> bexp" where
+  "not (B True) = B False" |
+  "not (B False) = B True" |
+  "not b = Not b"
+
+fun "and" :: "bexp \<Rightarrow> bexp \<Rightarrow> bexp" where
+  "and (B True) b = b" |
+  "and b (B True) = b" |
+  "and (B False) b = B False" |
+  "and b (B False) = B False" |
+  "and b1 b2 = And b1 b2 "
+
+fun less :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
+  "less (N n1) (N n2) = B(n1 < n2)" |
+  "less a1 a2 = Less a1 a2"
+
+fun le :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
+  "le (N n1) (N n2) = B(n1 \<le> n2)" |
+  "le a1 a2 = Le a1 a2"
+
+fun eq :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
+  "eq (N n1) (N n2) = B(n1 = n2)" |
+  "eq a1 a2 = Eq a1 a2"
+
+fun bsimp :: "bexp \<Rightarrow> bexp" where
+  "bsimp (B v) = B v" |
+  "bsimp (Not b) = not (bsimp b)" |
+  "bsimp (And b1 b2) = and (bsimp b1) (bsimp b2)" |
+  "bsimp (Less a1 a2) = less (asimp a1) (asimp a2)" |
+  "bsimp (Le a1 a2) = le (asimp a1) (asimp a2)" |
+  "bsimp (Eq a1 a2) = eq (asimp a1) (asimp a2)"
+
+fun bval :: "bexp \<Rightarrow> state \<Rightarrow> bool" where
+  "bval (B v) s = v" |
+  "bval (Not b) s = (\<not> bval b s)" |
+  "bval (And b1 b2) s = (bval b1 s \<and> bval b2 s)" |
+  "bval (Less a1 a2) s = (aval a1 s < aval a2 s)" |
+  "bval (Le a1 a2) s = (aval a1 s \<le> aval a2 s)" |
+  "bval (Eq a1 a2) s = (aval a1 s = aval a2 s)"
+
+theorem Le_correctness : "bval (Le a1 a2) s = (aval a1 s \<le> aval a2 s)"
+  apply (induction a1 a2 rule: le.induct)
+  apply (auto)
+  done
+
+theorem Eq_correctness : "bval (Eq a1 a2) s = (aval a1 s = aval a2 s)"
+  apply (induction a1 a2 rule: eq.induct)
+  apply auto
+  done
+
 
 end
