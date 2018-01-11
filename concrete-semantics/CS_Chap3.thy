@@ -276,6 +276,7 @@ theorem inline_correctness : "lval l s = aval (inline l) s"
 
 
 (* Exercise 3.7 *)
+(* We put the already done theory from the book *)
 datatype bexp = B bool
   | Not bexp
   | And bexp bexp
@@ -299,6 +300,7 @@ fun less :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
   "less (N n1) (N n2) = B(n1 < n2)" |
   "less a1 a2 = Less a1 a2"
 
+(* Now we extend it. Straightforward. *)
 fun le :: "aexp \<Rightarrow> aexp \<Rightarrow> bexp" where
   "le (N n1) (N n2) = B(n1 \<le> n2)" |
   "le a1 a2 = Le a1 a2"
@@ -323,6 +325,7 @@ fun bval :: "bexp \<Rightarrow> state \<Rightarrow> bool" where
   "bval (Le a1 a2) s = (aval a1 s \<le> aval a2 s)" |
   "bval (Eq a1 a2) s = (aval a1 s = aval a2 s)"
 
+(* Correctness of both operations is purely induction over expressions *)
 theorem Le_correctness : "bval (Le a1 a2) s = (aval a1 s \<le> aval a2 s)"
   apply (induction a1 a2 rule: le.induct)
   apply (auto)
