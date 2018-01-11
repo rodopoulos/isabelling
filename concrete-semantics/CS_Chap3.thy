@@ -276,7 +276,7 @@ theorem inline_correctness : "lval l s = aval (inline l) s"
   done
 
 
-(* Exercise 3.7 *)
+(* EXERCISE 3.7 *)
 (* Extensions can be done with definitions *)
 definition Le :: "AExp.aexp \<Rightarrow> AExp.aexp \<Rightarrow> bexp" where
   "Le a1 a2 = Not (Less a2 a1)"
@@ -294,7 +294,7 @@ theorem Eq_correctness : "bval (Eq a1 a2) s = (AExp.aval a1 s = AExp.aval a2 s)"
   done
 
 
-(* Exercise 3.8 *)
+(* EXERCISE 3.8 *)
 datatype ifexp = Bi bool 
   | If ifexp ifexp ifexp 
   | Less2 AExp.aexp AExp.aexp
@@ -340,5 +340,64 @@ theorem if2bexp_correctness : "bval (if2bexp e) s = ifval e s"
   apply auto
   done
 
+
+(* EXERCISE 3.9 *)
+datatype pbexp = VAR vname
+  | NOT pbexp
+  | AND pbexp pbexp
+  | OR pbexp pbexp
+
+(* Evaluates an expression *)
+fun pbval :: "pbexp \<Rightarrow> (vname \<Rightarrow> bool) \<Rightarrow> bool" where
+  "pbval (VAR v) s = s v" |
+  "pbval (NOT b) s = (\<not> pbval b s)" |
+  "pbval (AND b1 b2) s = (pbval b1 s \<and> pbval b2 s)" |
+  "pbval (OR b1 b2) s = (pbval b1 s \<or> pbval b2 s)"
+
+(* Tells if the boolean expression is in the negative normal formula *)
+fun is_nnf :: "pbexp \<Rightarrow> bool" where
+  "is_nnf (VAR _) = True" |
+  "is_nnf (NOT (VAR _)) = True" |
+  "is_nnf (NOT _) = False" |
+  "is_nnf (AND b1 b2) = (is_nnf b1 \<and> is_nnf b2)" |
+  "is_nnf (OR b1 b2) = (is_nnf b1 \<or> is_nnf b2)" 
+
+value "is_nnf (AND (VAR a) (NOT (VAR B)))"
+value "is_nnf (OR (VAR a) (NOT (VAR B)))"
+value "is_nnf (NOT (OR (VAR a) (NOT (VAR B))))"
+value "is_nnf (NOT (AND (VAR a) (VAR B)))" (* It works! *)
+
+fun nnf :: "pbexp \<Rightarrow> pbexp" where
+  "nnf (VAR v) = VAR v" |
+  "nnf (NOT (VAR v)) = NOT (VAR v)" |
+  "nnf (NOT (NOT b)) = nnf b" |
+  "nnf (NOT (AND b1 b2)) = OR (nnf (NOT b1)) (nnf (NOT b2))" |
+  "nnf (NOT (OR b1 b2)) = AND (nnf (NOT b1)) (nnf (NOT b2))" |
+  "nnf (AND b1 b2) = AND (nnf b1) (nnf b2)" |
+  "nnf (OR b1 b2) = OR (nnf b1) (nnf b2)"
+
+value "nnf (NOT (OR (VAR a) (VAR B)))" (* It works! *)
+
+(* 
+  Lemma nnf_correctness raises a subgoal, requiring to prove that
+  we prove that the NOT operator properly negate an expression.
+  So we prove it.  
+*)
+lemma negation_correctness [simp] : "pbval (nnf (NOT b)) s = (\<not> (pbval (nnf b) s))"
+  apply (induction b)
+  apply auto
+  done
+
+(* Here, the correctness follows easily. Induction is enough. *)
+theorem nnf_correctness : "pbval (nnf b) s = pbval b s"
+  apply (induction b)
+  apply auto
+  done
+
+(* TODO: explain the induct rule *)
+theorem is_nff_correctness : "is_nnf (nnf b)"
+  apply (induction b rule: nnf.induct)
+  apply auto
+  done
 
 end
