@@ -360,12 +360,12 @@ fun is_nnf :: "pbexp \<Rightarrow> bool" where
   "is_nnf (NOT (VAR _)) = True" |
   "is_nnf (NOT _) = False" |
   "is_nnf (AND b1 b2) = (is_nnf b1 \<and> is_nnf b2)" |
-  "is_nnf (OR b1 b2) = (is_nnf b1 \<or> is_nnf b2)" 
+  "is_nnf (OR b1 b2) = (is_nnf b1 \<and> is_nnf b2)" 
 
-value "is_nnf (AND (VAR a) (NOT (VAR B)))"
-value "is_nnf (OR (VAR a) (NOT (VAR B)))"
-value "is_nnf (NOT (OR (VAR a) (NOT (VAR B))))"
-value "is_nnf (NOT (AND (VAR a) (VAR B)))" (* It works! *)
+value "is_nnf (AND (VAR a) (NOT (VAR B)))" (* = True *)
+value "is_nnf (OR (VAR a) (NOT (VAR B)))" (* = True *)
+value "is_nnf (NOT (OR (VAR a) (NOT (VAR B))))" (* = False *)
+value "is_nnf (NOT (AND (VAR a) (VAR B)))" (* = False *)
 
 fun nnf :: "pbexp \<Rightarrow> pbexp" where
   "nnf (VAR v) = VAR v" |
@@ -379,7 +379,7 @@ fun nnf :: "pbexp \<Rightarrow> pbexp" where
 value "nnf (NOT (OR (VAR a) (VAR B)))" (* It works! *)
 
 (* 
-  Lemma nnf_correctness raises a subgoal, requiring to prove that
+  Lemma nnf_correctness raises a subgoal, requiring that
   we prove that the NOT operator properly negate an expression.
   So we prove it.  
 *)
@@ -399,5 +399,72 @@ theorem is_nff_correctness : "is_nnf (nnf b)"
   apply (induction b rule: nnf.induct)
   apply auto
   done
+
+fun is_not_or :: "pbexp \<Rightarrow> bool" where
+  "is_not_or (OR b1 b2) = False" |
+  "is_not_or (AND b1 b2) = (is_not_or b1 \<and> is_not_or b2)" |
+  "is_not_or b = True"
+
+fun is_dnf :: "pbexp \<Rightarrow> bool" where
+  "is_dnf (VAR _) = True" |
+  "is_dnf (NOT _) = True" |
+  "is_dnf (AND b1 b2) = ((is_not_or b1) \<and> (is_not_or b2))" |
+  "is_dnf (OR b1 b2) = (is_dnf b1 \<and> is_dnf b2)"
+  
+
+(* As the exercise hinted, let's make a distribution function for the AND operator *)
+fun distribute_and :: "pbexp \<Rightarrow> pbexp \<Rightarrow> pbexp" where
+  "distribute_and x (OR b1 b2) = OR (distribute_and x b1) (distribute_and x b2)" |
+  "distribute_and (OR b1 b2) x = OR (distribute_and b1 x) (distribute_and b2 x)" |
+  "distribute_and b1 b2 = AND b1 b2"
+
+(* Before defining dnf_of_nnf, let's prove that distribute_and is correct! *)
+(* First, checking it preserves the expression value... *)
+lemma distribution_preserves [simp] : "pbval (distribute_and b1 b2) s = pbval (AND b1 b2) s"
+  apply (induction b1 b2 rule: distribute_and.induct)
+  apply (auto)
+  done
+
+(* Then, applied at two dnf expressions, its result still is a dnf *)
+lemma distribution_correctness [simp] : 
+    "\<lbrakk>is_dnf b1; is_dnf b2\<rbrakk> \<Longrightarrow> is_dnf (distribute_and b1 b2)"
+  apply (induction b1 b2 rule: distribute_and.induct)
+  apply (auto)
+  done
+
+(* Ok, now let's define dnf_of_nnf *)
+fun dnf_of_nnf :: "pbexp \<Rightarrow> pbexp" where
+  "dnf_of_nnf (VAR x) = VAR x" |
+  "dnf_of_nnf (NOT b) = NOT b" |
+  "dnf_of_nnf (OR b1 b2) = OR (dnf_of_nnf b1) (dnf_of_nnf b2)" |
+  "dnf_of_nnf (AND b1 b2) = distribute_and (dnf_of_nnf b1) (dnf_of_nnf b2)"
+
+(* Here, simple induction is enough *)
+theorem dnf_of_nnf_preserves : "pbval (dnf_of_nnf b) s = pbval b s"
+  apply (induction b rule: dnf_of_nnf.induct)
+  apply (auto)
+  done
+
+(* 
+  In prior tries, I needed this lemma. In this one, it is not necessary,
+  but I found interesting to leave it here. We are just proving that negation
+  is still preserved.
+*)
+lemma dnf_of_nnf_negation [simp] : "is_nnf (NOT b) \<Longrightarrow> is_dnf (NOT b)"
+  apply (induction b)
+  apply (auto)
+  done
+
+(* Simple induction, as always. *)
+theorem dnf_to_nnf_correctness : "is_nnf b \<Longrightarrow> is_dnf (dnf_of_nnf b)"
+  apply (induction b rule: dnf_of_nnf.induct)
+  apply (auto)
+  done
+
+(* Fuck, that was long... *)
+
+
+(* EXERCISE 3.10 *)
+
 
 end
