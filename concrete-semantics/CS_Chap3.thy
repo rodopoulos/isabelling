@@ -465,6 +465,40 @@ theorem dnf_to_nnf_correctness : "is_nnf b \<Longrightarrow> is_dnf (dnf_of_nnf 
 
 
 (* EXERCISE 3.10 *)
+datatype instr = LOADI val | LOAD vname | ADD
+
+type_synonym stack = "val list"
+
+fun exec1 :: "instr \<Rightarrow> state \<Rightarrow> stack \<Rightarrow> stack option" where
+  "exec1 (LOADI n) _ stk = Some (n # stk)" |
+  "exec1 (LOAD v) s stk = Some (s(v) # stk)" |
+  "exec1 ADD s [] = None" |
+  "exec1 ADD s [x] = None" |
+  "exec1 ADD s (x # y # stk) = Some((x+y) # stk)"
+
+fun exec :: "instr list \<Rightarrow> state \<Rightarrow> stack \<Rightarrow> stack option" where
+  "exec [] _ stk = Some(stk)" |
+  "exec (i # is) s stk = (case exec1 i s stk of 
+    None \<Rightarrow> None |
+    Some stkx \<Rightarrow> exec is s stkx
+  )"
+
+fun comp :: "aexp \<Rightarrow> instr list" where
+  "comp (N n) = [LOADI n]" |
+  "comp (V x) = [LOAD x]" |
+  "comp (Plus e1 e2) = comp e1 @ comp e2 @ [ADD]"
+
+lemma exec_appending [simp] : 
+  "exec is1 s stk = Some stk2 \<Longrightarrow> exec (is1 @ is2) s stk = exec is2 s stk2"
+  apply (induction is1 arbitrary: stk)
+  apply (auto)
+  by (metis option.case_eq_if option.distinct(1))
+
+theorem "exec (comp a) s stk = Some (aval a s # stk)"
+  apply (induction a arbitrary: stk)
+  apply (auto)
+  done
 
 
+(* EXERCISE 3.11 *)
 end
