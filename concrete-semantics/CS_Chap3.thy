@@ -537,4 +537,36 @@ theorem "execr (compr a r) s rs r = aval a s"
 
 
 (* EXERCISE 3.12 *)
+datatype instr0 = LDI0 val | LD0 vname | MV0 reg | ADD0 reg
+
+fun exec01 :: "instr0 \<Rightarrow> state \<Rightarrow> regstate \<Rightarrow> regstate" where
+  "exec01 (LDI0 n) _ rs = rs(0 := n)" |
+  "exec01 (LD0 v) s rs = rs(0 := s v)" |
+  "exec01 (MV0 r) s rs = rs(r := rs 0)" |
+  "exec01 (ADD0 r) _ rs = rs(0 := rs 0 + rs r)"
+
+fun exec0 :: "instr0 list \<Rightarrow> state \<Rightarrow> regstate \<Rightarrow> regstate" where
+  "exec0 [] _ rs = rs" |
+  "exec0 (i # is) s rs = exec0 is s (exec01 i s rs)"
+
+fun comp0 :: "aexp \<Rightarrow> reg \<Rightarrow> instr0 list" where
+  "comp0 (N n) r = [LDI0 n]" |
+  "comp0 (V x) r = [LD0 x]" |
+  "comp0 (Plus e1 e2) r = comp0 e1 (r+1) @ [MV0 (r+1)] @ comp0 e2 (r+2) @ [ADD0 (r+1)]"
+
+lemma exec0_appending [simp] : "exec0 (xs @ ys) s rs = exec0 ys s (exec0 xs s rs)"
+  apply (induction xs arbitrary: rs)
+  apply (auto)
+  done
+
+lemma [simp] : "(0 < r1) \<and> (r1 \<le> r2) \<Longrightarrow> exec0 (comp0 e r2) s rs r1 = rs r1"
+  apply (induction e arbitrary: rs r1 r2)
+  apply (auto)
+  done
+
+theorem "exec0 (comp0 e r) s rs 0 = aval e s"
+  apply (induction e arbitrary: r rs)
+  apply (auto)
+  done
+
 end
