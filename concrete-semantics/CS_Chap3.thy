@@ -501,4 +501,40 @@ theorem "exec (comp a) s stk = Some (aval a s # stk)"
 
 
 (* EXERCISE 3.11 *)
+type_synonym reg = nat
+datatype instrr = LDI int reg | LD vname reg | ADD reg reg
+
+type_synonym regstate = "reg \<Rightarrow> int"
+
+fun execr1 :: "instrr \<Rightarrow> state \<Rightarrow> regstate \<Rightarrow> regstate" where
+  "execr1 (LDI n r) _ rs = rs(r := n)" |
+  "execr1 (LD v r) s rs = rs(r := s v)" |
+  "execr1 (ADD r1 r2) _ rs = rs(r1 := rs r1 + rs r2)"
+
+fun execr :: "instrr list \<Rightarrow> state \<Rightarrow> regstate \<Rightarrow> regstate" where
+  "execr [] _ rs = rs" |
+  "execr (i # is) s rs = execr is s (execr1 i s rs)"
+
+fun compr :: "aexp \<Rightarrow> reg \<Rightarrow> instrr list" where
+  "compr (N n) r = [LDI n r]" |
+  "compr (V x) r = [LD x r]" |
+  "compr (Plus e1 e2) r = compr e1 r @ compr e2 (r+1) @ [ADD r (r+1)]"
+
+lemma execr_appending [simp] : "execr (xs @ ys) s rs = execr ys s (execr xs s rs)"
+  apply (induction xs arbitrary: rs)
+  apply (auto)
+  done
+
+lemma [simp] : "r1 < r2 \<Longrightarrow> execr (compr e r2) s rs r1 = rs r1"
+  apply (induction e arbitrary: rs r1 r2)
+  apply (auto)
+  done
+
+theorem "execr (compr a r) s rs r = aval a s"
+  apply (induction a arbitrary: rs r)
+  apply (auto)
+  done
+
+
+(* EXERCISE 3.12 *)
 end
