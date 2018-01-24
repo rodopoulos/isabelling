@@ -53,4 +53,15 @@ theorem ins_correctness_2 : "ord t \<Longrightarrow> ord (ins n t)"
   done
 
 (* EXERCISE 4.2 *)
+(* Very trivial. Just follow exercise commands. *)
+inductive palindrome :: "'a list \<Rightarrow> bool" where
+  empt': "palindrome []" |
+  sing': "palindrome [x]" |
+  step': "palindrome xs \<Longrightarrow> palindrome (a # xs @ [a])"
+
+theorem palindrome_reverse: "palindrome xs \<Longrightarrow> rev xs = xs"
+  apply(induction rule: palindrome.induct)
+  apply(simp_all)
+  done
+
 end
