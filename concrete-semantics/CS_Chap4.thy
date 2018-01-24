@@ -110,4 +110,16 @@ theorem "star r x y \<Longrightarrow> star' r x y"
   apply (auto simp add: star'_trans intro: star'.refl')
   done
 
+
+(* EXERCISE 4.4 *)
+inductive iter :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> nat \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" where
+  izero: "iter r 0 x x" |
+  istep: "r x y \<Longrightarrow> iter r n y z \<Longrightarrow> iter r (n+1) x z"
+
+theorem "star r x y \<Longrightarrow> \<exists> n. iter r n x y"
+  apply (induction rule: star.induct)
+  apply (auto intro: izero istep)
+  done
+
+
 end
