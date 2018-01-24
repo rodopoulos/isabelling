@@ -1,6 +1,6 @@
 theory CS_Chap4
 
-imports Main
+imports Main "~~/src/HOL/IMP/Star"
 
 begin
 
@@ -52,6 +52,7 @@ theorem ins_correctness_2 : "ord t \<Longrightarrow> ord (ins n t)"
   apply (auto)
   done
 
+
 (* EXERCISE 4.2 *)
 (* Very trivial. Just follow exercise commands. *)
 inductive palindrome :: "'a list \<Rightarrow> bool" where
@@ -62,6 +63,39 @@ inductive palindrome :: "'a list \<Rightarrow> bool" where
 theorem palindrome_reverse: "palindrome xs \<Longrightarrow> rev xs = xs"
   apply(induction rule: palindrome.induct)
   apply(simp_all)
+  done
+
+
+(* EXERCISE 4.3 *)
+inductive star' :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
+  refl' : "star' r x x" |
+  step' : "star' r x y \<Longrightarrow> r y z \<Longrightarrow> star' r x z"
+
+lemma stars_refl' [simp] : "star r x x \<Longrightarrow> star' r x x"
+  apply (induction)
+  apply (rule refl')
+  apply (simp_all)
+  done
+
+lemma stars_refl [simp] : "star' r x x \<Longrightarrow> star r x x"
+  apply (induction)
+  apply (simp_all)
+  done
+
+lemma star'_trans [simp]: "star' r y z \<Longrightarrow> r x y \<Longrightarrow> star' r x z"
+  apply (induction rule: star'.induct)
+  apply (auto intro: refl' step')
+  done
+
+theorem star_is_star' : "star r x y \<Longrightarrow> star' r x y"
+  apply (induction rule: star.induct)
+  apply (auto intro: refl')
+  done
+
+theorem star'_is_star : "star' r x y \<Longrightarrow> star r x y"
+  apply (induction rule: star'.induct)
+   apply (auto)
+  apply (meson star_step1 star_trans)
   done
 
 end
