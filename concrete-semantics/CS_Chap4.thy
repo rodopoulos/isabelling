@@ -134,6 +134,29 @@ inductive T :: "alpha list \<Rightarrow> bool" where
   t1: "T []" |
   t2: "\<lbrakk>T w1; T w2\<rbrakk> \<Longrightarrow> T(w1 @ a # w2 @ [b])"
 
+lemma T_to_s3 : "\<lbrakk>T w2; T w1\<rbrakk> \<Longrightarrow> T (w1 @ w2)"
+  apply (induction rule: T.induct)
+  apply (simp)
+  apply (metis t2 append_assoc)
+  done
+
+(* 
+  Here, the subgoals are complexer.
+  
+  We use t1 rule to kill the subgoal concerning the empty string
+  The lemma above kills the subgoal about the appending operation. 
+  However, this raises the problem of s2. For that, we use Metis in
+  rules t1 and t2, in addition to Nil constant.
+  
+  We are basically saying that T can produce strings that S also can. 
+*)
+theorem S_to_T: "S w \<Longrightarrow> T w"
+  apply (induction rule: S.induct)
+    apply (simp add: t1)
+  apply (metis t1 t2 append_Nil)
+  apply (auto intro: T_to_s3)
+  done
+
 (* 
   All subgoals here claims for S rules.
   Hence, this theorem goes easily with them. 
@@ -143,40 +166,9 @@ theorem T_to_S : "T w \<Longrightarrow> S w"
   apply (auto intro: s1 s2 s3)
   done
 
-(* With this, we kill the first subgoal of theorem S_to_T *)
-lemma T_to_s2 [simp]: "T w \<Longrightarrow> T (a # w @ [b])"
-  using t1 t2 by force
-
-(* These two lemmas are required for the last lemma T_to_s3 *)
-lemma "\<lbrakk>T w2; T w1\<rbrakk> \<Longrightarrow> T (a # w1 @ b # w2)"
-  apply(induction rule: T.induct)
-   apply(auto simp add: t1 t2)
-  using t1 t2 apply force
-
-lemma "\<lbrakk>T w3; T w1; T w2\<rbrakk> \<Longrightarrow> T (w1 @ a # w2 @ b # w3)"
-  apply(induction rule: T.induct)
-   apply(auto simp add: t2)
-  using t2 by fastforce
-
-(* 
-  The subgoal raised here hides two different claims.
-  They are proved by the above sub-lemmas, respectively.
-
-  Finally, we kill the second subgoal of S_to_T
-*)
-lemma T_to_s3 [simp]: "\<lbrakk>T w1; T w2\<rbrakk> \<Longrightarrow> T(w1 @ w2)"
-  apply (induction rule: T.induct)
-  apply (auto intro: t1 t2)
-  done
-
-(* 
-  Here, the subgoals are complexer. We need the two previous lemmas
-  (with [simp] tags) for resolving them. We are basically saying that
-  T can produce strings that S also can. 
-*)
-theorem S_to_T: "S w \<Longrightarrow> T w"
-  apply (induction rule: S.induct)
-  apply (auto intro: t1 t2)
+(* If we proved that T w \<Longrightarrow> S w and S w \<Longrightarrow> T w, then T w = S w! *)
+corollary "S w = T w"
+  apply (auto simp add: T_to_S S_to_T)
   done
 
 end
