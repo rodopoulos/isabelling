@@ -122,4 +122,57 @@ theorem "star r x y \<Longrightarrow> \<exists> n. iter r n x y"
   done
 
 
+(* EXERCISE 4.5 *)
+datatype alpha = a | b
+
+inductive S :: "alpha list \<Rightarrow> bool" where
+  s1: "S []" |
+  s2: "S w \<Longrightarrow> S (a # w @ [b])" |
+  s3: "\<lbrakk>S w1; S w2\<rbrakk> \<Longrightarrow> S (w1 @ w2)"
+
+inductive T :: "alpha list \<Rightarrow> bool" where
+  t1: "T []" |
+  t2: "\<lbrakk>T w1; T w2\<rbrakk> \<Longrightarrow> T(w1 @ [a] @ w2 @ [b])"
+
+(* All subgoals here claims for S rules, therefore, this lemma goes easily with them. *)
+theorem T_to_S : "T w \<Longrightarrow> S w"
+  apply (induction rule: T.induct)
+  apply (auto intro: s1 s2 s3)
+  done
+
+(* With this, we kill the first subgoal of theorem S_to_T *)
+lemma T_to_s2 [simp]: "T w \<Longrightarrow> T (a # w @ [b])"
+  using t1 t2 by fastforce
+
+(* These two lemmas are required for the last lemma T_to_s3*)
+lemma "\<lbrakk>T w2; T w1\<rbrakk> \<Longrightarrow> T (a # w1 @ b # w2)"
+  apply(induction rule: T.induct)
+   apply(auto simp add: t1 t2)
+  using t1 t2 apply force
+  using t2 by fastforce
+
+lemma "\<lbrakk>T w3; T w1; T w2\<rbrakk> \<Longrightarrow> T (w1 @ a # w2 @ b # w3)"
+  apply(induction rule: T.induct)
+   apply(auto simp add: t2)
+  using t2 by fastforce
+
+(* 
+  The subgoal raised here hides two different claims.
+  Finally, we kill the second subgoal of S_to_T
+*)
+lemma T_to_s3 [simp]: "\<lbrakk>T w1; T w2\<rbrakk> \<Longrightarrow> T(w1 @ w2)"
+  apply (induction rule: T.induct)
+  apply (auto intro: t1 t2)
+  done
+
+(* 
+  Here, the subgoals are complexer. We need the two previous lemmas
+  (with [simp] tags) for resolving them. We are basically saying that
+  T can produce strings that S also can. 
+*)
+theorem S_to_T: "S w \<Longrightarrow> T w"
+  apply (induction rule: S.induct)
+  apply (auto intro: t1 t2)
+  done
+
 end
