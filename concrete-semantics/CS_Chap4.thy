@@ -132,9 +132,12 @@ inductive S :: "alpha list \<Rightarrow> bool" where
 
 inductive T :: "alpha list \<Rightarrow> bool" where
   t1: "T []" |
-  t2: "\<lbrakk>T w1; T w2\<rbrakk> \<Longrightarrow> T(w1 @ [a] @ w2 @ [b])"
+  t2: "\<lbrakk>T w1; T w2\<rbrakk> \<Longrightarrow> T(w1 @ a # w2 @ [b])"
 
-(* All subgoals here claims for S rules, therefore, this lemma goes easily with them. *)
+(* 
+  All subgoals here claims for S rules.
+  Hence, this theorem goes easily with them. 
+*)
 theorem T_to_S : "T w \<Longrightarrow> S w"
   apply (induction rule: T.induct)
   apply (auto intro: s1 s2 s3)
@@ -142,14 +145,13 @@ theorem T_to_S : "T w \<Longrightarrow> S w"
 
 (* With this, we kill the first subgoal of theorem S_to_T *)
 lemma T_to_s2 [simp]: "T w \<Longrightarrow> T (a # w @ [b])"
-  using t1 t2 by fastforce
+  using t1 t2 by force
 
-(* These two lemmas are required for the last lemma T_to_s3*)
+(* These two lemmas are required for the last lemma T_to_s3 *)
 lemma "\<lbrakk>T w2; T w1\<rbrakk> \<Longrightarrow> T (a # w1 @ b # w2)"
   apply(induction rule: T.induct)
    apply(auto simp add: t1 t2)
   using t1 t2 apply force
-  using t2 by fastforce
 
 lemma "\<lbrakk>T w3; T w1; T w2\<rbrakk> \<Longrightarrow> T (w1 @ a # w2 @ b # w3)"
   apply(induction rule: T.induct)
@@ -158,6 +160,8 @@ lemma "\<lbrakk>T w3; T w1; T w2\<rbrakk> \<Longrightarrow> T (w1 @ a # w2 @ b #
 
 (* 
   The subgoal raised here hides two different claims.
+  They are proved by the above sub-lemmas, respectively.
+
   Finally, we kill the second subgoal of S_to_T
 *)
 lemma T_to_s3 [simp]: "\<lbrakk>T w1; T w2\<rbrakk> \<Longrightarrow> T(w1 @ w2)"
