@@ -42,29 +42,42 @@ inductive_set bankerberos :: "event list set" where
     - Step 1 occured: Agent A must have issued the Server
   *)
   BK2: "\<lbrakk> evs2 \<in> bankerberos; Key K \<notin> used evs2; K \<in> symKeys;
-        Says A' Server \<lbrace>Agent A, Agent B\<rbrace> \<in> set evs2 \<rbrakk> 
+        Says A' Server \<lbrace> Agent A, Agent B \<rbrace> \<in> set evs2 \<rbrakk> 
     \<Longrightarrow> Says Server A (Crypt (shrK A) 
-          \<lbrace> Number CT evs2, Agent B, Key K, (Crypt (shrK B) 
-            \<lbrace> Number CT evs2, Agent A, Key K \<rbrace>) 
+          \<lbrace> Number (CT evs2), Agent B, Key K, 
+            Crypt (shrK B) \<lbrace> Number (CT evs2), Agent A, Key K \<rbrace> 
           \<rbrace>) # evs2 \<in> bankerberos" |
 
   (* 3rd step: A send the ticket and the authenticator to B. Hence:
     - Event is valid
     - Step 2 occured
     - Step 1 occured 
-
-  BK3: "\<lbrakk>
-          evs3 \<in> bankerberos;
-          Says Server A (Crypt (shrK A) \<lbrace> Number Tk, Agent B, Key K, 
-            (Crypt (shrK B) \<lbrace> Number Tk, Agent A, Key K \<rbrace>)
-          \<rbrace>) \<in> set evs3;
-          Says A Server \<lbrace>Agent A, Agent B\<rbrace> \<in> set evs2
-        \<rbrakk>
-    \<Longrightarrow> Says A B \<lbrace>
-          (Crypt (shrK B) \<lbrace> Number CT evs2, Agent A, Key K \<rbrace>, 
-          (Crypt K \<lbrace> Agent A, Number (CT evs3) \<rbrace>)
-        \<rbrace> # evs3 \<in> bankerberos"
+    - Timestamp for session key is not expired
   *)
-  
+  BK3: "\<lbrakk> evs3 \<in> bankerberos;
+          Says A Server \<lbrace>Agent A, Agent B\<rbrace> \<in> set evs3;
+          Says Server A (Crypt (shrK A) \<lbrace> Number Tk, Agent B, Key K, 
+            (Crypt (shrK B) \<lbrace> Number Tk, Agent A, Key K \<rbrace>) \<rbrace>) \<in> set evs3;
+          \<not> expiredK Tk evs3 \<rbrakk>
+    \<Longrightarrow> Says A B \<lbrace>
+          (Crypt (shrK B) \<lbrace> Number Tk, Agent A, Key K \<rbrace>), 
+          (Crypt K \<lbrace> Agent A, Number (CT evs3) \<rbrace>)
+        \<rbrace> # evs3 \<in> bankerberos" |
+
+  (* 4th step: B send his authenticator to A. For that:
+    - Event is valid
+    - Step 3 ocurred
+    - Timestamp for session key is not expired
+    - Timestamp for authenticator is not expired
+  *)
+  BK4: "\<lbrakk> evs4 \<in> bankerberos;
+          Says A' B \<lbrace> 
+            Crypt (shrK B) \<lbrace> Number Tk, Agent B, Key K \<rbrace>, 
+            Crypt K \<lbrace> Agent A, Number Ta \<rbrace>
+          \<rbrace> \<in> set evs4;
+          \<not> expiredK Tk eva4;
+          \<not> expiredA Ta evs4
+        \<rbrakk> 
+    \<Longrightarrow> Says B A (Crypt K (Number Ta)) # evs4 \<in> bankerberos"
 
 end
