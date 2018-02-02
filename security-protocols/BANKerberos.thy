@@ -56,13 +56,9 @@ inductive_set bankerberos :: "event list set" where
   *)
   BK3: "\<lbrakk> evs3 \<in> bankerberos;
           Says A Server \<lbrace>Agent A, Agent B\<rbrace> \<in> set evs3;
-          Says Server A (Crypt (shrK A) \<lbrace> Number Tk, Agent B, Key K, 
-            (Crypt (shrK B) \<lbrace> Number Tk, Agent A, Key K \<rbrace>) \<rbrace>) \<in> set evs3;
+          Says Server A (Crypt (shrK A) \<lbrace> Number Tk, Agent B, Key K, Ticket \<rbrace>) \<in> set evs3;
           \<not> expiredK Tk evs3 \<rbrakk>
-    \<Longrightarrow> Says A B \<lbrace>
-          (Crypt (shrK B) \<lbrace> Number Tk, Agent A, Key K \<rbrace>), 
-          (Crypt K \<lbrace> Agent A, Number (CT evs3) \<rbrace>)
-        \<rbrace> # evs3 \<in> bankerberos" |
+    \<Longrightarrow> Says A B \<lbrace> Ticket, Crypt K \<lbrace> Agent A, Number (CT evs3) \<rbrace> \<rbrace> # evs3 \<in> bankerberos" |
 
   (* 4th step: B send his authenticator to A. For that:
     - Event is valid
@@ -72,8 +68,8 @@ inductive_set bankerberos :: "event list set" where
   *)
   BK4: "\<lbrakk> evs4 \<in> bankerberos;
           Says A' B \<lbrace> 
-            Crypt (shrK B) \<lbrace> Number Tk, Agent B, Key K \<rbrace>, 
-            Crypt K \<lbrace> Agent A, Number Ta \<rbrace>
+             (Crypt (shrK B) \<lbrace>Number Tk, Agent B, Key K\<rbrace>),
+             (Crypt K \<lbrace>Agent A, Number Ta\<rbrace>)
           \<rbrace> \<in> set evs4;
           \<not> expiredK Tk eva4;
           \<not> expiredA Ta evs4
@@ -91,5 +87,12 @@ inductive_set bankerberos :: "event list set" where
            Says A Server (Crypt (shrK A) \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) \<in> set evop 
          \<rbrakk>
     \<Longrightarrow> Notes Spy \<lbrace>Number Tk, Key K\<rbrace> # evop \<in> bankerberos"
+
+
+
+
+(* LET'S START VERIFYING THE PROTOCOL *)
+
+
 
 end
