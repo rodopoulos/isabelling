@@ -78,6 +78,18 @@ inductive_set bankerberos :: "event list set" where
           \<not> expiredK Tk eva4;
           \<not> expiredA Ta evs4
         \<rbrakk> 
-    \<Longrightarrow> Says B A (Crypt K (Number Ta)) # evs4 \<in> bankerberos"
+    \<Longrightarrow> Says B A (Crypt K (Number Ta)) # evs4 \<in> bankerberos" | 
+
+  (* Modeling the spy omnipotent premises.
+     If he can derive something from the network, then he can fake the message.
+  *)
+  Fake: "\<lbrakk> evfk \<in> bankerberos; X \<in> synth (analz ( spied evfk)) \<rbrakk>
+    \<Longrightarrow> Says Spy B X # evfk \<in> bankerberos" |
+
+  (* Finally modeling the disclosure of key and leaking of info by a compromised agent *)
+  Oops: "\<lbrakk> evop \<in> bankerberos; 
+           Says A Server (Crypt (shrK A) \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) \<in> set evop 
+         \<rbrakk>
+    \<Longrightarrow> Notes Spy \<lbrace>Number Tk, Key K\<rbrace> # evop \<in> bankerberos"
 
 end
