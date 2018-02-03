@@ -90,9 +90,20 @@ inductive_set bankerberos :: "event list set" where
 
 
 
-
-(* LET'S START VERIFYING THE PROTOCOL *)
-
+(* MODELING THE PROTOCOL POSSIBILITIES *)
+(* 
+  We have to prove that it is possible that some trace reach an end. 
+  This happens when we have a fresh session key being shared between A and B
+*)
+lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys\<rbrakk> \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
+        Says B A (Crypt K (Number Timestamp)) \<in> set evs"
+  apply (intro exI bexI)
+  apply (rule_tac [2] bankerberos.NIL [
+          THEN bankerberos.BK1, THEN bankerberos.BK2,
+          THEN bankerberos.BK3, THEN bankerberos.BK4
+  ])
+  apply (simp_all (no_asm_simp) add: used_Cons)
+  done
 
 
 end
