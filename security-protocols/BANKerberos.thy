@@ -77,9 +77,13 @@ inductive_set bankerberos :: "event list set" where
     \<Longrightarrow> Says B A (Crypt K (Number Ta)) # evs4 \<in> bankerberos" | 
 
   (* Modeling the spy omnipotent premises.
-     If he can derive something from the network, then he can fake the message.
+     - evfk is a trace
+     - X is derivable from the Spy's knowledge set
+     - B is not the Spy
+
+    Then the Spy can send a fraudulent message to B
   *)
-  Fake: "\<lbrakk> evfk \<in> bankerberos; X \<in> synth (analz ( spied evfk)) \<rbrakk>
+  Fake: "\<lbrakk> evfk \<in> bankerberos; X \<in> synth (analz (spies evfk)); B \<noteq> Spy \<rbrakk>
     \<Longrightarrow> Says Spy B X # evfk \<in> bankerberos" |
 
   (* Finally modeling the disclosure of key and leaking of info by a compromised agent *)
