@@ -15,7 +15,13 @@ abbreviation CT :: "event list \<Rightarrow> nat" where
 
 (* DEFINITION OF LIFETIME FOR ENTITIES *)
 consts sesKlife :: nat (* session key *)
-consts authlife :: nat (* authenticators *)
+consts authlife :: nat (* authenticator *)
+
+specification (sesKlife) sesKlife_freshness [iff]: "2 \<le> sesKlife"
+  by blast
+
+specification (authlife) authlife_freshness [iff]: "authlife \<noteq> 0"
+  by blast
 
 (* DEFINITION OF EXPIRATION PREDICATES *)
 abbreviation expiredK :: "[nat, event list] \<Rightarrow> bool" where
@@ -45,7 +51,7 @@ inductive_set bankerberos :: "event list set" where
         Says A' Server \<lbrace> Agent A, Agent B \<rbrace> \<in> set evs2 \<rbrakk> 
     \<Longrightarrow> Says Server A (Crypt (shrK A) 
           \<lbrace> Number (CT evs2), Agent B, Key K, 
-            Crypt (shrK B) \<lbrace> Number (CT evs2), Agent A, Key K \<rbrace> 
+            (Crypt (shrK B) \<lbrace> Number (CT evs2), Agent A, Key K \<rbrace>) 
           \<rbrace>) # evs2 \<in> bankerberos" |
 
   (* 3rd step: A send the ticket and the authenticator to B. Hence:
@@ -55,8 +61,8 @@ inductive_set bankerberos :: "event list set" where
     - Timestamp for session key is not expired
   *)
   BK3: "\<lbrakk> evs3 \<in> bankerberos;
+          Says S A (Crypt (shrK A) \<lbrace> Number Tk, Agent B, Key K, Ticket \<rbrace>) \<in> set evs3;
           Says A Server \<lbrace>Agent A, Agent B\<rbrace> \<in> set evs3;
-          Says Server A (Crypt (shrK A) \<lbrace> Number Tk, Agent B, Key K, Ticket \<rbrace>) \<in> set evs3;
           \<not> expiredK Tk evs3 \<rbrakk>
     \<Longrightarrow> Says A B \<lbrace> Ticket, Crypt K \<lbrace> Agent A, Number (CT evs3) \<rbrace> \<rbrace> # evs3 \<in> bankerberos" |
 
@@ -71,7 +77,7 @@ inductive_set bankerberos :: "event list set" where
              (Crypt (shrK B) \<lbrace>Number Tk, Agent B, Key K\<rbrace>),
              (Crypt K \<lbrace>Agent A, Number Ta\<rbrace>)
           \<rbrace> \<in> set evs4;
-          \<not> expiredK Tk eva4;
+          \<not> expiredK Tk evs4;
           \<not> expiredA Ta evs4
         \<rbrakk> 
     \<Longrightarrow> Says B A (Crypt K (Number Ta)) # evs4 \<in> bankerberos" | 
@@ -88,10 +94,9 @@ inductive_set bankerberos :: "event list set" where
 
   (* Finally modeling the disclosure of key and leaking of info by a compromised agent *)
   Oops: "\<lbrakk> evop \<in> bankerberos; 
-           Says A Server (Crypt (shrK A) \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) \<in> set evop 
-         \<rbrakk>
+           Says Server A (Crypt (shrK A) \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) \<in> set evop;
+           expiredK Tk evop \<rbrakk>
     \<Longrightarrow> Notes Spy \<lbrace>Number Tk, Key K\<rbrace> # evop \<in> bankerberos"
-
 
 
 (* MODELING THE PROTOCOL POSSIBILITIES *)
@@ -99,14 +104,16 @@ inductive_set bankerberos :: "event list set" where
   We have to prove that it is possible that some trace reach an end. 
   This happens when we have a fresh session key being shared between A and B
 *)
-lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys\<rbrakk> \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
+lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys; A \<noteq> B \<rbrakk> \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
         Says B A (Crypt K (Number Timestamp)) \<in> set evs"
+  apply (cut_tac sesKlife_freshness)
+  apply (cut_tac authlife_freshness)
   apply (intro exI bexI)
-  apply (rule_tac [2] bankerberos.NIL [
-          THEN bankerberos.BK1, THEN bankerberos.BK2,
-          THEN bankerberos.BK3, THEN bankerberos.BK4
-  ])
-  apply (simp_all (no_asm_simp) add: used_Cons)
+  apply (rule_tac [2] bankerberos.NIL 
+      [THEN bankerberos.BK1, THEN bankerberos.BK2,
+       THEN bankerberos.BK3, THEN bankerberos.BK4]
+  )
+  apply (possibility, simp_all (no_asm_simp) add: used_Cons)
   done
 
 
