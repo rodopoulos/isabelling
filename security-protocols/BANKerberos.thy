@@ -24,11 +24,13 @@ specification (authlife) authlife_freshness [iff]: "authlife \<noteq> 0"
   by blast
 
 (* DEFINITION OF EXPIRATION PREDICATES *)
-abbreviation expiredK :: "[nat, event list] \<Rightarrow> bool" where
-  "expiredK Tk evs == ((CT evs) - Tk > sesKlife)"
+abbreviation
+  expiredK :: "[nat, event list] => bool" where
+  "expiredK T evs == sesKlife + T < CT evs"
 
-abbreviation expiredA :: "[nat, event list] \<Rightarrow> bool" where
-  "expiredA Ta evs == ((CT evs) - Ta > authlife)"
+abbreviation
+  expiredA :: "[nat, event list] => bool" where
+  "expiredA T evs == authlife + T < CT evs"
 
 
 (* PROTOCOL MODEL *)
@@ -104,15 +106,32 @@ inductive_set bankerberos :: "event list set" where
   We have to prove that it is possible that some trace reach an end. 
   This happens when we have a fresh session key being shared between A and B
 *)
-lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys; A \<noteq> B \<rbrakk> \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
+
+lemma [simp]: "\<lbrakk>Key K \<notin> used []\<rbrakk> \<Longrightarrow> 0 < sesKlife"
+
+lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys \<rbrakk> \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
         Says B A (Crypt K (Number Timestamp)) \<in> set evs"
   apply (cut_tac sesKlife_freshness)
-  apply (cut_tac authlife_freshness)
-  apply (intro exI bexI)
+  apply (intro exI)
+  apply (intro bexI)
+  done
+  apply (rule_tac [2] bankerberos.NIL)
+  done
+  apply (rule_tac [2] [THEN bankerberos.BK1, THEN bankerberos.BK2, THEN bankerberos.BK3, THEN bankerberos.BK4])
+  done
+
   apply (rule_tac [2] bankerberos.NIL 
       [THEN bankerberos.BK1, THEN bankerberos.BK2,
        THEN bankerberos.BK3, THEN bankerberos.BK4]
   )
+  done
+
+  apply (simp_all)
+  done
+
+  apply (possibility)
+  done
+
   apply (possibility, simp_all (no_asm_simp) add: used_Cons)
   done
 
