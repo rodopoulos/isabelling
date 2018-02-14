@@ -39,6 +39,17 @@ inductive_set bankerberos :: "event list set" where
   (* Nothing going on in the network *)
   NIL: "[] \<in> bankerberos" |
 
+  (* Modeling the spy omnipotent premises.
+     - evfk is a trace
+     - X is derivable from the Spy's knowledge set
+     - B is not the Spy
+
+    Then the Spy can send a fraudulent message to B
+  *)
+  Fake: "\<lbrakk> evfk \<in> bankerberos; X \<in> synth (analz (spies evfk)) \<rbrakk>
+    \<Longrightarrow> Says Spy B X # evfk \<in> bankerberos" |
+
+
   (* First step: A issues the Server with the communication pair of agents *)
   BK1: "\<lbrakk> evs1 \<in> bankerberos \<rbrakk> 
     \<Longrightarrow> Says A Server \<lbrace>Agent A, Agent B\<rbrace> # evs1 \<in> bankerberos" |
@@ -76,23 +87,13 @@ inductive_set bankerberos :: "event list set" where
   *)
   BK4: "\<lbrakk> evs4 \<in> bankerberos;
           Says A' B \<lbrace> 
-             (Crypt (shrK B) \<lbrace>Number Tk, Agent B, Key K\<rbrace>),
+             (Crypt (shrK B) \<lbrace>Number Tk, Agent A, Key K\<rbrace>),
              (Crypt K \<lbrace>Agent A, Number Ta\<rbrace>)
           \<rbrace> \<in> set evs4;
           \<not> expiredK Tk evs4;
           \<not> expiredA Ta evs4
         \<rbrakk> 
     \<Longrightarrow> Says B A (Crypt K (Number Ta)) # evs4 \<in> bankerberos" | 
-
-  (* Modeling the spy omnipotent premises.
-     - evfk is a trace
-     - X is derivable from the Spy's knowledge set
-     - B is not the Spy
-
-    Then the Spy can send a fraudulent message to B
-  *)
-  Fake: "\<lbrakk> evfk \<in> bankerberos; X \<in> synth (analz (spies evfk)); B \<noteq> Spy \<rbrakk>
-    \<Longrightarrow> Says Spy B X # evfk \<in> bankerberos" |
 
   (* Finally modeling the disclosure of key and leaking of info by a compromised agent *)
   Oops: "\<lbrakk> evop \<in> bankerberos; 
@@ -107,32 +108,15 @@ inductive_set bankerberos :: "event list set" where
   This happens when we have a fresh session key being shared between A and B
 *)
 
-lemma [simp]: "\<lbrakk>Key K \<notin> used []\<rbrakk> \<Longrightarrow> 0 < sesKlife"
-
-lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys \<rbrakk> \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
-        Says B A (Crypt K (Number Timestamp)) \<in> set evs"
+lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys \<rbrakk> 
+        \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
+          Says B A (Crypt K (Number Timestamp)) \<in> set evs"
   apply (cut_tac sesKlife_freshness)
   apply (intro exI)
   apply (intro bexI)
-  done
-  apply (rule_tac [2] bankerberos.NIL)
-  done
-  apply (rule_tac [2] [THEN bankerberos.BK1, THEN bankerberos.BK2, THEN bankerberos.BK3, THEN bankerberos.BK4])
-  done
-
-  apply (rule_tac [2] bankerberos.NIL 
-      [THEN bankerberos.BK1, THEN bankerberos.BK2,
-       THEN bankerberos.BK3, THEN bankerberos.BK4]
-  )
-  done
-
-  apply (simp_all)
-  done
-
+  apply (rule_tac [2] bankerberos.NIL [THEN bankerberos.BK1, THEN bankerberos.BK2, THEN bankerberos.BK3, THEN bankerberos.BK4])
   apply (possibility)
-  done
-
-  apply (possibility, simp_all (no_asm_simp) add: used_Cons)
+  apply (simp_all (no_asm_simp))
   done
 
 
