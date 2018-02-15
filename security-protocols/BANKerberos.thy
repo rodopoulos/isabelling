@@ -117,7 +117,44 @@ lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys \<rbrakk>
   apply (rule_tac [2] bankerberos.NIL [THEN bankerberos.BK1, THEN bankerberos.BK2, THEN bankerberos.BK3, THEN bankerberos.BK4])
   apply (possibility)
   apply (simp_all (no_asm_simp))
+done
+
+(* Defining BEFORE function, that returns all events before a certain event *)
+fun before :: "event \<Rightarrow> event list \<Rightarrow> event list" where
+  "before ev evs = takeWhile (\<lambda>z. z \<noteq> ev) (rev evs)"
+
+
+(* TODO: Needed these two for proving both lemmas below. Don't know why. *)
+declare Says_imp_knows_Spy [THEN parts.Inj, dest]
+declare parts.Body [dest]
+declare analz_into_parts [dest]
+declare Fake_parts_insert_in_Un [dest]
+
+
+lemma Oops_reveals_ticket :
+  "Says S A (Crypt Ka \<lbrace>Timestamp, B, K, Ticket\<rbrace>) \<in> set evs
+    \<Longrightarrow> Ticket \<in> parts (spies evs)"
+  apply blast
   done
+
+lemma Oops_reveals_key : 
+  "Says Server A (Crypt (shrK A) \<lbrace>Timestamp, B, K, Ticket\<rbrace>) \<in> set evs 
+    \<Longrightarrow> K \<in> parts(spies evs)"
+  apply blast
+  done
+
+lemma [simp] : "evs \<in> bankerberos \<Longrightarrow> Key (shrK A) \<in> parts(spies evs) = (A \<in> bad)"
+  apply (erule bankerberos.induct)
+  apply (frule_tac [7] Oops_reveals_key)
+  apply (frule_tac [5] Oops_reveals_ticket)
+  apply (simp_all)
+  apply (blast+)
+done
+
+
+lemma "evs \<in> bankerberos \<Longrightarrow> (Key (shrK A) \<in> analz(spies evs)) = (A \<in> bad)"
+  apply (auto)
+done
 
 
 end
