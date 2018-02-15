@@ -108,16 +108,34 @@ inductive_set bankerberos :: "event list set" where
   This happens when we have a fresh session key being shared between A and B
 *)
 
+(* declare [[show_types]] *)
+(* declare [[show_sorts]] *)
+(* declare [[show_consts]] *)
+
 lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys \<rbrakk> 
         \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
           Says B A (Crypt K (Number Timestamp)) \<in> set evs"
   apply (cut_tac sesKlife_freshness)
   apply (intro exI)
   apply (intro bexI)
-  apply (rule_tac [2] bankerberos.NIL [THEN bankerberos.BK1, THEN bankerberos.BK2, THEN bankerberos.BK3, THEN bankerberos.BK4])
-  apply (possibility)
-  apply (simp_all (no_asm_simp))
+  apply (rule_tac [2] bankerberos.BK4)
+  apply (rule_tac [2] bankerberos.BK3)
+  apply (rule_tac [2] bankerberos.BK2)
+  apply (rule_tac [2] bankerberos.BK1)
+  apply (rule_tac [2] bankerberos.NIL)
+  apply (simp) (* Killing subgoal 1: including event of BK4 *)
+  apply (simp) (* Killing subgoal 2: first premise for BK2 \<rightarrow> K is fresh *)
+  apply (simp) (* Killing subgoal 3: second premise for BK2 \<rightarrow> K is a symmetric key*)
+  apply (simp) (* Killing subgoal 4: third premise for BK2 \<rightarrow> BK1 happened *)
+  apply (simp) (* Killing subgoal 5: first premise for BK3 \<rightarrow> BK2 happened *)
+  apply (simp) (* Killing subgoal 6: second premise for BK3 \<rightarrow> BK1 happened *)
+  apply (simp (no_asm_simp)) (* Killing subgoal 7: third for BK3 \<rightarrow> Tk is valid *)
+  apply (simp) (* Killing subgoal 8: first premise for BK4 \<rightarrow> BK happened *)
+  apply (simp (no_asm_simp)) (* Killing subgoal 9: second premise for BK4 \<rightarrow> Tk is valid *)
+  apply (simp) (* Killing subgoal 10: third premise for BK4 \<rightarrow> Ta is valid *)
+  (* apply (simp_all (no_asm_simp))+ *) 
 done
+
 
 (* Defining BEFORE function, that returns all events before a certain event *)
 fun before :: "event \<Rightarrow> event list \<Rightarrow> event list" where
@@ -135,22 +153,23 @@ lemma Oops_reveals_ticket :
   "Says S A (Crypt Ka \<lbrace>Timestamp, B, K, Ticket\<rbrace>) \<in> set evs
     \<Longrightarrow> Ticket \<in> parts (spies evs)"
   apply blast
-  done
+done
 
 lemma Oops_reveals_key : 
   "Says Server A (Crypt (shrK A) \<lbrace>Timestamp, B, K, Ticket\<rbrace>) \<in> set evs 
     \<Longrightarrow> K \<in> parts(spies evs)"
   apply blast
-  done
+done
 
 lemma [simp] : "evs \<in> bankerberos \<Longrightarrow> Key (shrK A) \<in> parts(spies evs) = (A \<in> bad)"
   apply (erule bankerberos.induct)
   apply (frule_tac [7] Oops_reveals_key)
   apply (frule_tac [5] Oops_reveals_ticket)
   apply (simp_all)
-  apply (blast+)
+  apply (blast)
+  apply (blast)
+  apply (blast)
 done
-
 
 lemma "evs \<in> bankerberos \<Longrightarrow> (Key (shrK A) \<in> analz(spies evs)) = (A \<in> bad)"
   apply (auto)
