@@ -138,8 +138,8 @@ done
 
 
 (* Defining BEFORE function, that returns all events before a certain event *)
-fun before :: "event \<Rightarrow> event list \<Rightarrow> event list" where
-  "before ev evs = takeWhile (\<lambda>z. z \<noteq> ev) (rev evs)"
+definition before :: "event \<Rightarrow> event list \<Rightarrow> event list" ("before _ on _") where
+  "before ev on evs = takeWhile (\<lambda>z. z \<noteq> ev) (rev evs)"
 
 
 (* TODO: Needed these two for proving both lemmas below. Don't know why. *)
@@ -175,5 +175,67 @@ lemma "evs \<in> bankerberos \<Longrightarrow> (Key (shrK A) \<in> analz(spies e
   apply (auto)
 done
 
+(* Due to Inductive Method predicate USED definition *)
+lemma used_Says_rev : "used (evs @ [Says A B X]) = parts {X} \<union> (used evs)"
+  apply (induct_tac "evs")
+  apply (simp)
+  apply (induct_tac "a")
+  apply (auto)
+  done
+
+(* Due to Inductive Method predicate USED definition *)
+lemma used_Notes_rev : "used (evs @ [Notes B X]) = parts{X} \<union> (used evs)"
+  apply (induct_tac "evs")
+  apply (simp)
+  apply (induct_tac "a")
+  apply auto
+  done
+
+(* Due to Inductive Method predicate USED definition *)
+lemma used_Gets_rev : "used (evs @ [Gets B X]) = (used evs)"
+  apply (induct_tac "evs")
+  apply (simp)
+  apply (induct_tac "a")
+  apply (auto)
+  done
+
+lemma used_evs_rev : "used evs = used (rev evs)"
+  apply (induct_tac "evs")
+  apply (simp)
+  apply (induct_tac "a")
+  apply (simp add: used_Says_rev)
+  apply (simp add: used_Gets_rev)
+  apply (simp add: used_Notes_rev)
+  done
+
+lemma takeWhile_void : "x \<notin> set evs \<longrightarrow> takeWhile(\<lambda>z. z \<noteq> x) evs = evs"
+  apply auto
+  done
+
+lemma BK_Says_Server_message_form :
+  "\<lbrakk>Says Server A (Crypt Ka \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) \<in> set evs; evs \<in> bankerberos\<rbrakk>
+    \<Longrightarrow> Ka = shrK A \<and> K \<in> symKeys \<and> K \<notin> range shrK
+        \<and> Ticket = Crypt (shrK B) \<lbrace>Number Tk, Agent A, Key K\<rbrace>
+        \<and> Key K \<notin> used (before 
+          (Says Server A (Crypt Ka \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>)) on evs)
+        \<and> Tk = CT(before
+          (Says Server A (Crypt Ka \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>)) on evs)"
+  apply (unfold before_def)
+  apply (erule rev_mp)
+  apply (erule bankerberos.induct)
+  apply (simp_all add: takeWhile_tail)
+  apply (auto)
+  apply (metis length_rev takeWhile_void)+
+  done
+
+
+(* (* Reliability theorem: Proving that the session key is fresh when the Server issues it *) *)
+(* lemma "evs \<in> bankerberos \<Longrightarrow> Key K \<notin> used(before *)
+  (* (Says Server A (Crypt K' \<lbrace>Na, Agent B, Key K, X\<rbrace>)) evs)" *)
+
+  (* apply (erule bankerberos.induct) *)
+  (* apply (auto) *)
+  
+(* done *)
 
 end
