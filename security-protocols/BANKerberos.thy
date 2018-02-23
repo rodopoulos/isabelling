@@ -225,7 +225,6 @@ lemma BK_Says_Server_message_form :
   apply (erule bankerberos.induct)
   apply (simp_all add: takeWhile_tail)
   apply (auto)
-  apply (metis length_rev takeWhile_void)+
   done
 
 
