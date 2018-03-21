@@ -85,5 +85,7 @@ tester/coverage/
 tester/bisect*.out
 *.marks
 
-# my folder of official proof scripts
+# official proof scripts folder
 official-proofs/
+# language and theory documentation folder
+doc/
