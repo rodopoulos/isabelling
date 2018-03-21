@@ -84,3 +84,6 @@ simplewallet/
 tester/coverage/
 tester/bisect*.out
 *.marks
+
+# my folder of official proof scripts
+official-proofs/
