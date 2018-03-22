@@ -99,7 +99,7 @@ inductive_set bankerberos :: "event list set" where
   Oops: "\<lbrakk> evop \<in> bankerberos; 
            Says Server A (Crypt (shrK A) \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) \<in> set evop;
            expiredK Tk evop \<rbrakk>
-    \<Longrightarrow> Notes Spy \<lbrace>Number Tk, Key K\<rbrace> # evop \<in> bankerberos"
+    \<Longrightarrow> Notes Spy \<lbrace>Number Tk, Key K\<rbrace> # evop \<in> bankerberos" print_theorems
 
 
 (* MODELING THE PROTOCOL POSSIBILITIES *)
@@ -107,11 +107,6 @@ inductive_set bankerberos :: "event list set" where
   We have to prove that it is possible that some trace reach an end. 
   This happens when we have a fresh session key being shared between A and B
 *)
-
-(* declare [[show_types]] *)
-(* declare [[show_sorts]] *)
-(* declare [[show_consts]] *)
-
 lemma "\<lbrakk> Key K \<notin> used []; K \<in> symKeys \<rbrakk> 
         \<Longrightarrow> \<exists> Timestamp. \<exists> evs \<in> bankerberos. 
           Says B A (Crypt K (Number Timestamp)) \<in> set evs"
@@ -148,17 +143,16 @@ declare parts.Body [dest]
 declare analz_into_parts [dest]
 declare Fake_parts_insert_in_Un [dest]
 
-
 lemma Oops_reveals_ticket :
   "Says S A (Crypt Ka \<lbrace>Timestamp, B, K, Ticket\<rbrace>) \<in> set evs
     \<Longrightarrow> Ticket \<in> parts (spies evs)"
-  apply blast
+  apply (auto) (* I could have used blast here, but this is a simple implication *)
 done
 
 lemma Oops_reveals_key : 
   "Says Server A (Crypt (shrK A) \<lbrace>Timestamp, B, K, Ticket\<rbrace>) \<in> set evs 
     \<Longrightarrow> K \<in> parts(spies evs)"
-  apply blast
+  apply (auto) (* I could have used blast here, but this is a simple implication *)
 done
 
 lemma [simp] : "evs \<in> bankerberos \<Longrightarrow> Key (shrK A) \<in> parts(spies evs) = (A \<in> bad)"
@@ -171,7 +165,7 @@ lemma [simp] : "evs \<in> bankerberos \<Longrightarrow> Key (shrK A) \<in> parts
   apply (blast)
 done
 
-lemma "evs \<in> bankerberos \<Longrightarrow> (Key (shrK A) \<in> analz(spies evs)) = (A \<in> bad)"
+lemma [simp] : "evs \<in> bankerberos \<Longrightarrow> (Key (shrK A) \<in> analz(spies evs)) = (A \<in> bad)"
   apply (auto)
 done
 
@@ -179,7 +173,7 @@ done
 lemma used_Says_rev : "used (evs @ [Says A B X]) = parts {X} \<union> (used evs)"
   apply (induct_tac "evs")
   apply (simp)
-  apply (induct_tac "a")
+  apply (induct_tac "a") 
   apply (auto)
   done
 
@@ -212,6 +206,14 @@ lemma takeWhile_void : "x \<notin> set evs \<longrightarrow> takeWhile(\<lambda>
   apply auto
   done
 
+(*
+  Given the protocol second step belonging to the trace, we can assure that:
+    - Ka is the A private key
+    - K is a symmetric key
+    - K is not a private key (that's trivial)
+    - Key must not have appeared prior this step
+    - Tk is defined as the time that this event that ocurred
+*)
 lemma BK_Says_Server_message_form :
   "\<lbrakk>Says Server A (Crypt Ka \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) \<in> set evs; evs \<in> bankerberos\<rbrakk>
     \<Longrightarrow> Ka = shrK A \<and> K \<in> symKeys \<and> K \<notin> range shrK
@@ -225,16 +227,22 @@ lemma BK_Says_Server_message_form :
   apply (erule bankerberos.induct)
   apply (simp_all add: takeWhile_tail)
   apply (auto)
+  apply (metis length_rev set_rev takeWhile_void used_evs_rev)+
   done
 
+(* AUTHENTICITY PROOFS *)
 
-(* (* Reliability theorem: Proving that the session key is fresh when the Server issues it *) *)
-(* lemma "evs \<in> bankerberos \<Longrightarrow> Key K \<notin> used(before *)
-  (* (Says Server A (Crypt K' \<lbrace>Na, Agent B, Key K, X\<rbrace>)) evs)" *)
-
-  (* apply (erule bankerberos.induct) *)
-  (* apply (auto) *)
-  
-(* done *)
+lemma BK_Kab_authentic :
+  "\<lbrakk>A \<notin> bad; evs \<in> bankerberos;
+   (Crypt (shrK A) \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>) 
+    \<in> parts (spies evs)\<rbrakk> \<Longrightarrow> 
+   Says Server A (Crypt (shrK A) \<lbrace>Number Tk, Agent B, Key K, Ticket\<rbrace>)
+    \<in> set evs" 
+  apply (erule rev_mp)
+  apply (erule bankerberos.induct)
+  apply (frule_tac [7] Oops_reveals_key)
+  apply (frule_tac [5] Oops_reveals_ticket)
+  apply (simp_all)
+  done
 
 end
