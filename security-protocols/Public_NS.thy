@@ -30,11 +30,26 @@ inductive_set nspublic :: "event list set" where
            Says B' A (Crypt (pubK A) \<lbrace>Number Na, Number Nb, Agent B\<rbrace>) \<in> set evs3\<rbrakk> 
     \<Longrightarrow> Says A B (Crypt (pubK B) (Nonce Nb)) # evs3 \<in> nspublic"
 
-lemma Spy_see_keys_for_compromised_agents :
+ 
+declare analz_into_parts [dest]
+    
+lemma Spy_only_see_compromised_keys [simp] :
   "evs \<in> nspublic \<Longrightarrow> (Key (priK A) \<in> parts (knows Spy evs)) = (A \<in> bad)"
-  apply (erule nspublic.induct)
+  apply (erule nspublic.induct) (* apply protocol steps *)
+  (* Just simply everything. Agent A private key never appears in any message *)
   apply (simp_all)
-  apply auto
+  (* We are left with one subgoal. We have the two first premises. 
+     Luckily, the third one is presented in Inductive Method theory
+  *)
+  apply (frule_tac Fake_parts_insert) 
+  (* Simplify everything. Proof is done. *)
+  apply (auto)
+  done
+  
+lemma Spy_only_see_leaked_keys [simp] :
+  "evs \<in> nspublic \<Longrightarrow> (Key (priK A) \<in> analz (knows Spy evs)) = (A \<in> bad)"
+  (* This is obvious given that analz H \<subseteq> parts H *)
+  apply (auto)
   done
 
 end
