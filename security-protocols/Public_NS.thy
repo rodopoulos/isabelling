@@ -30,9 +30,12 @@ inductive_set nspublic :: "event list set" where
            Says B' A (Crypt (pubK A) \<lbrace>Number Na, Number Nb, Agent B\<rbrace>) \<in> set evs3\<rbrakk> 
     \<Longrightarrow> Says A B (Crypt (pubK B) (Nonce Nb)) # evs3 \<in> nspublic"
 
- 
+(* This lemma is proved in Message theory*)
+declare knows_Spy_partsEs [elim]
 declare analz_into_parts [dest]
-    
+declare Fake_parts_insert_in_Un  [dest]
+
+   
 lemma Spy_only_see_compromised_keys [simp] :
   "evs \<in> nspublic \<Longrightarrow> (Key (priK A) \<in> parts (knows Spy evs)) = (A \<in> bad)"
   apply (erule nspublic.induct) (* apply protocol steps *)
@@ -41,7 +44,7 @@ lemma Spy_only_see_compromised_keys [simp] :
   (* We are left with one subgoal. We have the two first premises. 
      Luckily, the third one is presented in Inductive Method theory
   *)
-  apply (frule_tac Fake_parts_insert) 
+  apply (frule Fake_parts_insert) 
   (* Simplify everything. Proof is done. *)
   apply (auto)
   done
@@ -52,4 +55,28 @@ lemma Spy_only_see_leaked_keys [simp] :
   apply (auto)
   done
 
+(* Unicity Lemmas *)
+lemma No_repeated_nounces :
+  "\<lbrakk>Crypt (pubK C) \<lbrace>Na', Nonce Na, Agent D\<rbrace> \<in> parts (knows Spy evs);
+    Crypt (pubK B) \<lbrace>Nonce Na, Agent A\<rbrace> \<in> parts (knows Spy evs);
+    evs \<in> nspublic\<rbrakk>
+  \<Longrightarrow> Nonce Na \<in> analz (knows Spy evs)"
+  apply (erule rev_mp)
+  apply (erule rev_mp)
+  apply (erule nspublic.induct, simp_all)
+  apply (auto intro: analz_insertI)
+  done
+
+lemma Nonce_determine_message_format : 
+  "\<lbrakk>Crypt (pubK B) \<lbrace>Nonce Na, Agent A\<rbrace> \<in> parts (knows Spy evs); 
+    Crypt (pubK B') \<lbrace>Nonce Na, Agent A'\<rbrace> \<in> parts (knows Spy evs);
+    Nonce Na \<notin> analz (knows Spy evs); evs \<in> nspublic\<rbrakk>
+  \<Longrightarrow> A = A' \<and> B = B'"
+  apply (erule rev_mp)  
+  apply (erule rev_mp)
+  apply (erule rev_mp)
+  apply (erule nspublic.induct, simp_all)
+  apply (auto intro: analz_insertI)
+  done
+  
 end
