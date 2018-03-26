@@ -146,7 +146,7 @@ done
 
 section\<open>TRUST LEMMAS\<close>
 
-lemma NS2_format [rule_format] :
+lemma A_trusts_NS2 [rule_format] :
   "\<lbrakk>Crypt (pubK A) \<lbrace>Nonce Na, Nonce Nb, Agent B\<rbrace> \<in> parts (knows Spy evs);
     Says A B (Crypt (pubK B) \<lbrace>Nonce Na, Agent A\<rbrace>) \<in> set evs;
     A \<notin> bad; B \<notin> bad; evs \<in> nspublic\<rbrakk>
@@ -163,8 +163,28 @@ lemma A_trusts_B :
   "\<lbrakk>Says A B (Crypt (pubK B) \<lbrace>Nonce Na, Agent A\<rbrace>) \<in> set evs;
     Says B' A (Crypt (pubK A) \<lbrace>Nonce Na, Nonce Nb, Agent B\<rbrace>) \<in> set evs;
     A \<notin> bad; B \<notin> bad; evs \<in> nspublic\<rbrakk> 
-  \<Longrightarrow> Says B A (Crypt (pubK A) \<lbrace>Nonce Na, Agent A\<rbrace>) \<in> set evs"
-by (blast intro: NS2_format)
+  \<Longrightarrow> Says B A (Crypt (pubK A) \<lbrace>Nonce Na, Nonce Nb, Agent B\<rbrace>) \<in> set evs"
+by (auto intro: A_trusts_NS2)
+
+
+lemma B_trusts_NS1 :
+  "\<lbrakk>Crypt (pubK B) \<lbrace>Nonce Na, Agent A\<rbrace> \<in> parts (knows Spy evs);
+    Nonce Na \<notin> analz (knows Spy evs); evs \<in> nspublic\<rbrakk>
+  \<Longrightarrow> Says A B (Crypt (pubK B) \<lbrace>Nonce Na, Agent A\<rbrace>) \<in> set evs"
+apply (erule rev_mp, erule rev_mp)
+apply (erule nspublic.induct, simp_all)
+apply (auto intro: analz_insertI)
+done
+
+lemma B_trusts_NS3 :
+  "\<lbrakk>Crypt (pubK B) (Nonce Nb) \<in> parts (knows Spy evs);
+    Says B A (Crypt (pubK A) \<lbrace>Nonce Na, Nonce Nb, Agent B\<rbrace>) \<in> set evs;
+    A \<notin> bad; B \<notin> bad; evs \<in> nspublic\<rbrakk> 
+  \<Longrightarrow> Says A B (Crypt (pubK B) (Nonce Nb)) \<in> set evs"
+apply (erule rev_mp, erule rev_mp)
+apply (erule nspublic.induct, simp_all)
+apply (auto dest: Nb_secrecy)
+done
 
 (* B trust in A is established when B receives NS3
    containing Nonce Nb, sent on NS2
@@ -174,9 +194,6 @@ lemma B_trusts_A :
     Says A' B (Crypt (pubK B) (Nonce Nb)) \<in> set evs;
     A \<notin> bad; B \<notin> bad; evs \<in> nspublic\<rbrakk> 
   \<Longrightarrow> Says A B (Crypt (pubK B) (Nonce Nb)) \<in> set evs"
-apply (erule rev_mp, erule rev_mp)
-apply (erule nspublic.induct, simp_all)
-apply (auto dest: Nb_secrecy)
-done
+by (auto intro: B_trusts_NS3)
   
 end
