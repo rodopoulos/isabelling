@@ -166,7 +166,7 @@ lemma A_trusts_B :
   \<Longrightarrow> Says B A (Crypt (pubK A) \<lbrace>Nonce Na, Nonce Nb, Agent B\<rbrace>) \<in> set evs"
 by (auto intro: A_trusts_NS2)
 
-
+(* Step NS1 produces a nonce that can only belong to A, if the Spy doesn't know it *)
 lemma B_trusts_NS1 :
   "\<lbrakk>Crypt (pubK B) \<lbrace>Nonce Na, Agent A\<rbrace> \<in> parts (knows Spy evs);
     Nonce Na \<notin> analz (knows Spy evs); evs \<in> nspublic\<rbrakk>
@@ -176,6 +176,7 @@ apply (erule nspublic.induct, simp_all)
 apply (auto intro: analz_insertI)
 done
 
+(* Step NS3 produces relays in a valid nonce Nb given that A and B are uncompromised *)
 lemma B_trusts_NS3 :
   "\<lbrakk>Crypt (pubK B) (Nonce Nb) \<in> parts (knows Spy evs);
     Says B A (Crypt (pubK A) \<lbrace>Nonce Na, Nonce Nb, Agent B\<rbrace>) \<in> set evs;
