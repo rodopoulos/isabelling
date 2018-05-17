@@ -14,9 +14,10 @@ inductive_set daptrans :: "event list set" where
     \<Longrightarrow> Says A Server (Number T) # evs1 \<in> daptrans"
 
   | DT2: "\<lbrakk> evs2 \<in> daptrans;
-          Nonce r \<notin> used evs2;
           Says A Server Transaction \<in> set evs2;
-          r' = Crypt K2 (Nonce r);
+          Nonce r \<notin> used evs2;
+          r' = Crypt k2 (Nonce r);
+          k2 \<in> symKeys;
           h_s = Hash \<lbrace> Transaction, r' \<rbrace>
         \<rbrakk>
     \<Longrightarrow> Says Server A \<lbrace> Transaction, r', h_s \<rbrace> # evs2 \<in> daptrans"
@@ -39,7 +40,7 @@ lemma Protocol_terminates :
   apply (rule_tac [2] daptrans.DT2)
   apply (rule_tac [2] daptrans.DT1)
   apply (rule_tac [2] daptrans.Nil)
-  apply(possibility)
+  apply (possibility)
   done
 
 end
