@@ -138,5 +138,32 @@ lemma knows_Spy_Gets_a [simp] :
 by simp
 
 
+lemma knows_Spy_subset_knows_Spy_Says :
+  "knows Spy evs \<subseteq> knows Spy (Says A B X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_Spy_subset_knows_Spy_Notes :
+  "knows Spy evs \<subseteq> knows Spy (Notes A X # evs)"
+by force
+
+lemma knows_Spy_subset_knows_Spy_Gets :
+  "knows Spy evs \<subseteq> knows Spy (Gets A X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_Spy_subset_knows_Spy_Inputs :
+  "knows Spy evs \<subseteq> knows Spy (Inputs A P X # evs)"
+by auto
+
+lemma knows_Spy_subset_knows_Spy_Gets_s :
+  "knows Spy evs \<subseteq> knows Spy (Gets_s P X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_Spy_subset_knows_Spy_Outputs :
+  "knows Spy evs \<subseteq> knows Spy (Outputs P A X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_Spy_subset_knows_Spy_Gets_a :
+  "knows Spy evs \<subseteq> knows Spy (Gets_a A X # evs)"
+by (simp add: subset_insertI)  
 
 end
