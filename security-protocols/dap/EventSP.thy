@@ -68,6 +68,7 @@ primrec knows :: "agent \<Rightarrow> event list \<Rightarrow> msg set" where
           if (A = A' & A \<noteq> Spy) then insert X (knows A evs)
           else knows A evs
   )"
+
   
 primrec used :: "event list \<Rightarrow> msg set" where
   used_Nil  : "used [] = (\<Union> B. parts (initState B))" |
@@ -98,6 +99,7 @@ done
 
 
 
+(* AGENTS' KNOWLEDGE LEMMAS *)
 
 lemmas parts_insert_knows_A = parts_insert [of _ "knows A evs"] for A evs
 
@@ -137,6 +139,7 @@ lemma knows_Spy_Gets_a [simp] :
   "knows Spy (Gets_a A X # evs) = knows Spy evs"
 by simp
 
+(* ===== *)
 
 lemma knows_Spy_subset_knows_Spy_Says :
   "knows Spy evs \<subseteq> knows Spy (Says A B X # evs)"
@@ -164,6 +167,101 @@ by (simp add: subset_insertI)
 
 lemma knows_Spy_subset_knows_Spy_Gets_a :
   "knows Spy evs \<subseteq> knows Spy (Gets_a A X # evs)"
-by (simp add: subset_insertI)  
+by (simp add: subset_insertI)
+
+(* ===== *)
+
+lemma Says_imp_knows_Spy [rule_format] :
+  "Says A B X \<in> set evs \<longrightarrow> X \<in> knows Spy evs"
+apply (induct_tac "evs")
+apply (simp) (* first case is evs = [] \<rightarrow> trivial *)
+apply (simp_all split: event.split)
+done
+
+lemma Notes_imp_knows_Spy [rule_format] :
+  "Notes A X \<in> set evs \<longrightarrow> A \<in> bad \<longrightarrow> X \<in> knows Spy evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+done
+
+lemma Inputs_imp_knows_Spy [rule_format] : 
+  "Inputs Spy P X \<in> set evs \<longrightarrow> X \<in> knows Spy evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+done
+
+lemma Gets_s_imp_knows_Spy [rule_format] : 
+  "Gets_s P X \<in> set evs \<longrightarrow> P \<in> connected \<longrightarrow> P \<in> badp \<longrightarrow> X \<in> knows Spy evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+done
+
+lemma Outputs_imp_knows_Spy [rule_format] : 
+  "Outputs P Spy X \<in> set evs \<longrightarrow> X \<in> knows Spy evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+done
+
+lemma Outputs_imp_knows_Spy_by_smartphone [rule_format] : 
+  "Outputs P A X \<in> set evs \<longrightarrow> P \<in> connected \<longrightarrow> P \<in> badp \<longrightarrow> X \<in> knows Spy evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+done
+
+(* ===== *)
+
+lemmas knows_Spy_partsEs =
+     Says_imp_knows_Spy [THEN parts.Inj, elim_format]
+     parts.Body [elim_format]
+
+lemma knows_Says: "knows A (Says A B X # evs) = insert X (knows A evs)"
+by simp
+
+lemma knows_Notes: "knows A (Notes A X # evs) = insert X (knows A evs)"
+by simp
+
+lemma knows_Gets:
+  "A \<noteq> Spy \<longrightarrow> knows A (Gets A X # evs) = insert X (knows A evs)"
+by simp
+
+lemma knows_Inputs: "knows A (Inputs A C X # evs) = insert X (knows A evs)"
+by simp
+
+lemma knows_Gets_s: 
+  "A \<noteq> Spy \<longrightarrow> knows A (Gets_s C X # evs) = knows A evs"
+by simp
+
+lemma knows_Outputs: 
+  "knows A (Outputs C A X # evs) = insert X (knows A evs)"
+by simp
+
+lemma knows_Gets_a:
+  "A \<noteq> Spy \<longrightarrow> knows A (Gets_a A X # evs) = insert X (knows A evs)"
+by simp
+
+(* ===== *)
+
+lemma knows_subset_knows_Says: "knows A evs \<subseteq> knows A (Says A' B X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_subset_knows_Notes: "knows A evs \<subseteq> knows A (Notes A' X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_subset_knows_Gets: "knows A evs \<subseteq> knows A (Gets A' X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_subset_knows_Inputs: "knows A evs \<subseteq> knows A (Inputs A' C X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_subset_knows_Gets_s: "knows A evs \<subseteq> knows A (Gets_s C X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_subset_knows_Outputs: "knows A evs \<subseteq> knows A (Outputs C A' X # evs)"
+by (simp add: subset_insertI)
+
+lemma knows_subset_knows_Gets_a: "knows A evs \<subseteq> knows A (Gets_a A' X # evs)"
+by (simp add: subset_insertI)
+  
+(* ===== *)
 
 end
