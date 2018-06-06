@@ -320,6 +320,38 @@ apply (simp_all add: parts_insert_knows_A split: event.split, blast)
 done
 
 
+(* USED FUNCTION LEMMAS *)
+
+lemma Says_parts_used [rule_format (no_asm)] : 
+  "Says A B X \<in> set evs \<longrightarrow> (parts {X}) \<subseteq> used evs "
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+apply (auto)
+done
+
+lemma Notes_parts_used [rule_format (no_asm)] : 
+  "Notes A X \<in> set evs \<longrightarrow> (parts {X}) \<subseteq> used evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+apply (auto)
+done
+
+lemma Inputs_parts_used [rule_format (no_asm)] : 
+  "Inputs A P X \<in> set evs \<longrightarrow> (parts {X}) \<subseteq> used evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+apply (auto)
+done
+
+lemma Outputs_parts_used [rule_format (no_asm)] : 
+  "Outputs P A X \<in> set evs \<longrightarrow> (parts {X}) \<subseteq> used evs"
+apply (induct_tac "evs")
+apply (simp_all (no_asm_simp) split: event.split)
+apply (auto)
+done
+
+(* END USED FUNCTION LEMMAS *)
+
 
 text{*NOTE REMOVAL--laws above are cleaner, as they don't involve "case"*}
 declare knows_Cons [simp del]
